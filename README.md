@@ -1,95 +1,143 @@
-# Nasa-ExoPlanet-2025
 
+1. **Kepler**  
+   - Label: `koi_pdisposition` (preferred) / `koi_disposition` (fallback)  
+   - Features: `koi_period`, `koi_depth`, `koi_prad`, `koi_srad`, `koi_model_snr`
 
+2. **K2**  
+   - Label: `disposition`  
+   - Features: `pl_orbper`, `pl_trandep`, `pl_rade`, `st_rad`, (SNR rarely present)
 
-## Getting started
+3. **TESS O(TOI)**  
+   - Label: `tfopwg_disp` (`CP`, `KP`, `PC`, `FP`, `APC`)  
+   - Features: `pl_orbper`, `pl_trandep`, `pl_rade`, `st_rad`  
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+---
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+##  Labels
+I normalize all mission labels into two forms:
 
-## Add your files
+- **Multiclass (`label_multiclass`)**  
+  - `CONFIRMED`  
+  - `CANDIDATE`  
+  - `FALSE POSITIVE`
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+- **Binary (`label_binary`)**  
+  - `1` = Confirmed planet  
+  - `0` = Candidate or False Positive  
+
+---
+
+##  Features
+The pipeline extracts five core **tabular features** (common across missions):
+
+- `period_days` → orbital period [days]  
+- `transit_depth_ppm` → transit depth [ppm]  
+- `planet_radius_re` → planet radius [Earth radii]  
+- `stellar_radius_rs` → stellar radius [Solar radii]  
+- `snr` → transit signal-to-noise ratio  
+
+These are preprocessed into **z-scored features** (standardized: mean 0, std 1) and saved as:  
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/armana-team/nasa-exoplanet-2025.git
-git branch -M main
-git push -uf origin main
+z_period_days, z_transit_depth_ppm, z_planet_radius_re, z_stellar_radius_rs, z_snr
 ```
 
-## Integrate with your tools
+---
 
-- [ ] [Set up project integrations](https://gitlab.com/armana-team/nasa-exoplanet-2025/-/settings/integrations)
+##
+To remember,how we preapared the data, artifacts are availabe.
+Some values were missing → we filled them in using the median from the training set. Features had very different scales (e.g. radius in Earth units vs period in days)  we rescaled them so they all fit into a standard range (z-scoring).
 
-## Collaborate with your team
+numeric_imputer.joblib : remembers what numbers we used to fill in missing values.
+numeric_scaler.joblib : remembers the average and standard deviation for each feature, so we can scale new data exactly the same way.
+label_map.json : documents how labels like CP, PC, or FP were converted into CONFIRMED, CANDIDATE, or FALSE POSITIVE.
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
 
-## Test and Deploy
+##  Exploratory Data Analysis (EDA)
 
-Use the built-in continuous integration in GitLab.
+Before training machine learning models, it is essential to understand the dataset — this step is called **Exploratory Data Analysis (EDA)**.  
+EDA helps us check data quality, reveal patterns, and make sure our features actually carry useful information.
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+In this project, we performed EDA on the unified Kepler, K2, and TESS dataset:
 
-***
+### Correlation Heatmap
 
-# Editing this README
+We computed the pairwise correlations between the five main z-scored features:
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+- `z_period_days` (orbital period)  
+- `z_transit_depth_ppm` (transit depth)  
+- `z_planet_radius_re` (planet radius in Earth radii)  
+- `z_stellar_radius_rs` (stellar radius in Solar radii)  
+- `z_snr` (signal-to-noise ratio)
 
-## Suggestions for a good README
+The heatmap shows which features are strongly related. For example:
+	•	Larger planets (planet_radius_re) often cause deeper transits (transit_depth_ppm).
+	•	Stellar radius can influence transit depth and detectability.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+This helps us understand redundancy and which features may add unique value.
+**Key observations:**
+- Transit depth and planet radius are strongly correlated (larger planets usually produce deeper transits).  
+- Transit depth also correlates with SNR, since deeper transits are easier to detect.  
+- Stellar radius shows moderate correlation with planet radius and transit depth.  
+- Orbital period is mostly independent — providing unique information.  
 
-## Name
-Choose a self-explaining name for your project.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+⸻
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+### Principal Component Analysis (PCA)
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+PCA reduces the 5-dimensional feature space into 2 dimensions (PC1, PC2) while preserving as much variance as possible.
+This allows us to visualize the structure of the dataset:
+	•	PCA by binary label
+	•	Points are colored as “Planet” (confirmed) or “Non-Planet” (candidate/false positive).
+	•	If separation appears, it means our features are informative for classification.
+	•	PCA by mission
+	•	Points are colored by mission (Kepler, K2, TESS).
+	•	This reveals how mission-specific biases or noise affect the feature space.
+	•	Example: TESS may cluster differently due to brighter target stars and shorter baselines.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+⸻
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+### Insights from EDA
+	•	Some features are highly correlated (e.g., radius vs transit depth), so models may not need all of them.
+	•	Outliers exist (extreme radius or depth values), which require clipping or scaling.
+	•	PCA shows partial separation between planets and false positives, suggesting the dataset is suitable for ML classification.
+	•	Missions have distinct distributions, so including “mission” as a feature may help the model generalize.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+⸻
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+ Figures generated (in reports/figures/):
+	•	correlation_heatmap.png — feature correlations
+	•	pca_binary.png — PCA colored by planet vs non-planet
+	•	pca_mission.png — PCA colored by mission
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+-------------------------
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+⸻
 
-## License
-For open source projects, say how it is licensed.
+### UMAP Visualization
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+I applied UMAP (Uniform Manifold Approximation and Projection), a non-linear dimensionality reduction method. Unlike PCA, which is linear, UMAP captures more complex structures and is widely used to visualize high-dimensional data in 2D.
 
-first initial commitss
+## UMAP colored by mission
+	•	Each point represents a candidate from Kepler, K2, or TESS.
+	•	Kepler (orange) and TESS (green) tend to form distinct regions in the embedding space, while K2 (blue) overlaps with both.
+	•	This reflects the domain shift between missions — each survey has different noise levels, target stars, and observational strategies.
+	•	It shows why adding mission as a feature can help the ML model learn across datasets.
+
+## UMAP colored by label (planet vs non-planet)
+	•	When points are colored by label_binary (1 = confirmed planet, 0 = candidate/false positive), we see partial separation.
+	•	Confirmed planets cluster more densely in some regions, while false positives spread differently.
+	•	The overlap means the classification task is challenging, but the visible trends confirm the features (period, depth, radius, stellar size, SNR) contain real signal.
+	•	This supports using ML models to learn decision boundaries beyond what is visible in raw scatter plots.
+
+⸻
+
+## Takeaway
+ UMAP reveals both mission-specific biases and label-driven structure in the dataset. It justifies:
+	1.	Including “mission” as a feature during training.
+	2.	Expecting ML models to perform better than naive thresholds, since structure is present but nonlinear.
+
+⸻
