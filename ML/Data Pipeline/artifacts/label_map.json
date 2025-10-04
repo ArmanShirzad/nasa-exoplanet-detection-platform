@@ -1,0 +1,25 @@
+{
+  "CONFIRMED": [
+    "CONFIRMED",
+    "CONF",
+    "CANDIDATE CONFIRMED",
+    "KP",
+    "CP",
+    "KNOWN PLANET"
+  ],
+  "CANDIDATE": [
+    "CANDIDATE",
+    "PC",
+    "APC",
+    "AMBIGUOUS",
+    "CAND",
+    "CANDIDATE AMBIGUOUS"
+  ],
+  "FALSE POSITIVE": [
+    "FALSE POSITIVE",
+    "FP",
+    "FALSE-POSITIVE",
+    "NOT DISPOSITIONED - FALSE POSITIVE",
+    "FA"
+  ]
+}
