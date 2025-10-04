@@ -14,17 +14,22 @@ import {
   TrendingUp
 } from 'lucide-react';
 
+interface FeatureImportance {
+  feature: string;
+  importance: number;
+  detail: string;
+}
+
 interface AnalysisResult {
   verdict: 'Exoplanet Detected' | 'Not an Exoplanet';
   confidence: number;
   explanation: string;
-  details?: {
-    keyFactors: string[];
-    statisticalSignificance: number;
-    alternativeHypotheses: string[];
-    recommendations: string[];
-  };
-  fluxData?: number[];
+  feature_importances: FeatureImportance[];
+  annotated_timeseries?: Array<{
+    time: number;
+    flux: number;
+    highlight: boolean;
+  }>;
 }
 
 interface ResultsCardProps {
@@ -35,7 +40,7 @@ interface ResultsCardProps {
 const ResultsCard: React.FC<ResultsCardProps> = ({ result, onVisualizeData }) => {
   const [expandedSections, setExpandedSections] = useState({
     explanation: true,
-    details: false,
+    features: false,
     visualization: false
   });
 
@@ -58,7 +63,7 @@ const ResultsCard: React.FC<ResultsCardProps> = ({ result, onVisualizeData }) =>
   }: {
     title: string;
     section: keyof typeof expandedSections;
-    icon: React.ComponentType<any>;
+    icon: React.ComponentType<{ className?: string }>;
     badge?: string;
   }) => (
     <button
@@ -165,104 +170,87 @@ const ResultsCard: React.FC<ResultsCardProps> = ({ result, onVisualizeData }) =>
         </AnimatePresence>
       </div>
 
-      {/* Detailed Analysis */}
-      {result.details && (
-        <div className="space-y-4">
-          <SectionHeader
-            title="Detailed Analysis"
-            section="details"
-            icon={BarChart3}
-            badge="Advanced"
-          />
-          
-          <AnimatePresence>
-            {expandedSections.details && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="space-y-4 p-4 bg-white/5 rounded-lg border border-white/10"
-              >
-                {/* Key Factors */}
-                <div>
-                  <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-space-400" />
-                    Key Factors
-                  </h4>
-                  <ul className="space-y-2">
-                    {result.details.keyFactors.map((factor, index) => (
-                      <motion.li
-                        key={index}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="flex items-start gap-2 text-sm text-gray-300"
-                      >
-                        <div className="w-1.5 h-1.5 rounded-full bg-space-400 mt-2 flex-shrink-0" />
-                        {factor}
-                      </motion.li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Statistical Significance */}
-                <div>
-                  <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-space-400" />
-                    Statistical Significance
-                  </h4>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 bg-gray-700 rounded-full h-2">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${result.details.statisticalSignificance}%` }}
-                        transition={{ delay: 0.8, duration: 1 }}
-                        className="h-2 bg-gradient-to-r from-space-400 to-nebula-400 rounded-full"
-                      />
+      {/* Feature Importance Analysis */}
+      <div className="space-y-4">
+        <SectionHeader
+          title="Feature Importance Analysis"
+          section="features"
+          icon={BarChart3}
+          badge="Explainable AI"
+        />
+        
+        <AnimatePresence>
+          {expandedSections.features && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-4 p-4 bg-white/5 rounded-lg border border-white/10"
+            >
+              {/* Feature Importance Bars */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-space-400" />
+                  Top Feature Contributions
+                </h4>
+                {result.feature_importances.slice(0, 8).map((feature, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-300">
+                        {feature.feature}
+                      </span>
+                      <span className="text-sm text-space-400">
+                        {(feature.importance * 100).toFixed(1)}%
+                      </span>
                     </div>
-                    <span className="text-sm font-medium text-space-300">
-                      {result.details.statisticalSignificance}%
-                    </span>
-                  </div>
+                    <div className="relative">
+                      <div className="w-full bg-gray-700 rounded-full h-2">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${feature.importance * 100}%` }}
+                          transition={{ delay: 0.5 + index * 0.1, duration: 0.8 }}
+                          className="h-2 bg-gradient-to-r from-space-400 to-nebula-400 rounded-full"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400 leading-relaxed">
+                      {feature.detail}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Why this verdict section */}
+              <div className="mt-6 p-4 glass rounded-lg border border-white/10">
+                <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-space-400" />
+                  Why this verdict?
+                </h4>
+                <p className="text-sm text-gray-300 leading-relaxed mb-3">
+                  The AI model analyzed multiple features to reach this conclusion. The top contributing factors are shown above, 
+                  with their relative importance in the final decision. This explainable approach helps you understand 
+                  the reasoning behind the detection result.
+                </p>
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <Activity className="w-3 h-3" />
+                  <span>
+                    Based on {result.feature_importances.length} analyzed features with confidence {result.confidence}%
+                  </span>
                 </div>
-
-                {/* Alternative Hypotheses */}
-                {result.details.alternativeHypotheses.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold text-white mb-3">Alternative Hypotheses</h4>
-                    <ul className="space-y-2">
-                      {result.details.alternativeHypotheses.map((hypothesis, index) => (
-                        <li key={index} className="text-sm text-gray-400 flex items-start gap-2">
-                          <span className="text-gray-500">•</span>
-                          {hypothesis}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Recommendations */}
-                {result.details.recommendations.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold text-white mb-3">Recommendations</h4>
-                    <ul className="space-y-2">
-                      {result.details.recommendations.map((recommendation, index) => (
-                        <li key={index} className="text-sm text-gray-300 flex items-start gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                          {recommendation}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Data Visualization */}
-      {result.fluxData && onVisualizeData && (
+      {result.annotated_timeseries && onVisualizeData && (
         <div className="space-y-4">
           <SectionHeader
             title="Data Visualization"
@@ -280,22 +268,48 @@ const ResultsCard: React.FC<ResultsCardProps> = ({ result, onVisualizeData }) =>
                 className="p-4 bg-white/5 rounded-lg border border-white/10"
               >
                 <p className="text-gray-300 mb-4">
-                  Visualize the flux time series data to better understand the detection pattern.
+                  Visualize the annotated time series data to see highlighted transit windows and model fits.
                 </p>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => onVisualizeData(result.fluxData!)}
-                  className="w-full py-3 px-4 bg-gradient-to-r from-space-500 to-nebula-500 
-                           text-white font-semibold rounded-lg shadow-lg
-                           hover:from-space-600 hover:to-nebula-600
-                           focus:ring-4 focus:ring-space-400/20
-                           transition-all duration-200
-                           flex items-center justify-center gap-2"
-                >
-                  <BarChart3 className="w-5 h-5" />
-                  Show Flux Visualization
-                </motion.button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => onVisualizeData(result.annotated_timeseries!.map(p => p.flux))}
+                    className="py-3 px-4 bg-gradient-to-r from-space-500 to-nebula-500 
+                             text-white font-semibold rounded-lg shadow-lg
+                             hover:from-space-600 hover:to-nebula-600
+                             focus:ring-4 focus:ring-space-400/20
+                             transition-all duration-200
+                             flex items-center justify-center gap-2"
+                  >
+                    <BarChart3 className="w-5 h-5" />
+                    Show Flux Chart
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      // Download results as JSON
+                      const dataStr = JSON.stringify(result, null, 2);
+                      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                      const url = URL.createObjectURL(dataBlob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = 'exoplanet_analysis_results.json';
+                      link.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="py-3 px-4 bg-gradient-to-r from-nebula-500 to-purple-600 
+                             text-white font-semibold rounded-lg shadow-lg
+                             hover:from-nebula-600 hover:to-purple-700
+                             focus:ring-4 focus:ring-nebula-400/20
+                             transition-all duration-200
+                             flex items-center justify-center gap-2"
+                  >
+                    <Activity className="w-5 h-5" />
+                    Download Results
+                  </motion.button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
