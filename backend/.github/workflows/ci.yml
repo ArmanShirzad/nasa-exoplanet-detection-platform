@@ -1,0 +1,226 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install -e ".[dev]"
+
+    - name: Lint with flake8
+      run: |
+        python -m flake8 src/ tests/
+        python -m black --check src/ tests/
+        python -m isort --check-only src/ tests/
+
+    - name: Type check with mypy
+      run: |
+        python -m mypy src/
+
+    - name: Test schema validation
+      run: |
+        python -m pytest tests/test_schema.py -v
+
+    - name: Test with pytest
+      run: |
+        python -m pytest tests/ -v --cov=src --cov-report=xml
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install .
+
+    - name: Generate OpenAPI spec
+      run: |
+        python scripts/make_openapi.py
+
+    - name: Validate OpenAPI spec
+      run: |
+        python -c "import yaml; yaml.safe_load(open('openapi.yaml'))"
+        echo "OpenAPI specification is valid YAML"
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: [test, build]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_TOKEN }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: false  # Set to true when ready to deploy
+        tags: |
+          armana-backend:latest
+          armana-backend:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Test Docker image
+      run: |
+        docker run --rm armana-backend:latest python -c "import src.app.main; print('Image tests passed')"
+
+  integration:
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install test dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Run integration tests
+      run: |
+        python -m pytest tests/ -m integration -v
+
+  security:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit[toml]
+
+    - name: Run safety check
+      run: |
+        safety check
+
+    - name: Run bandit security linter
+      run: |
+        bandit -r src/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test, build, docker]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install deploy dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add actual deployment commands here
+        # This could be AWS, Google Cloud, or other platform
+
+    - name: Run smoke tests against staging
+      run: |
+        echo "Running smoke tests..."
+        # Add actual smoke testing commands here
+        python -m pytest tests/ -m "smoke" -v
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [test, build, docker, integration]
+    if: always()
+
+    steps:
+    - name: Notify on success
+      if: ${{ needs.test.result == 'success' && needs.build.result == 'success' }}
+      run: |
+        echo "✅ All tests passed! CI pipeline successful."
+
+    - name: Notify on failure
+      if: ${{ needs.test.result == 'failure' || needs.build.result == 'failure' }}
+      run: |
+        echo "❌ CI pipeline failed. Please check the logs."
+        exit 1
