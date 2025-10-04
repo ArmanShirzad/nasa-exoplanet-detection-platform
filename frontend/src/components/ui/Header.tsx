@@ -2,9 +2,13 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Globe, Star, Menu, X, Github, Twitter, ExternalLink } from 'lucide-react';
+import { Globe, Star, Menu, X, Github, Twitter, ExternalLink, Map } from 'lucide-react';
 
-export default function Header() {
+interface HeaderProps {
+  onOpen3DViewer?: () => void;
+}
+
+export default function Header({ onOpen3DViewer }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navigation = [
@@ -60,8 +64,22 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* Social Links */}
+          {/* 3D Map Button & Social Links */}
           <div className="hidden md:flex items-center gap-4">
+            {/* 3D Map Button */}
+            {onOpen3DViewer && (
+              <motion.button
+                onClick={onOpen3DViewer}
+                whileHover={{ scale: 1.1, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-space-500 to-nebula-500 text-white hover:from-space-600 hover:to-nebula-600 transition-all duration-200 shadow-lg"
+                title="Open 3D Exoplanet Map"
+              >
+                <Map className="w-4 h-4" />
+                <span className="text-sm font-medium">3D Map</span>
+              </motion.button>
+            )}
+            
             {socialLinks.map((link) => (
               <motion.a
                 key={link.name}
@@ -113,6 +131,23 @@ export default function Header() {
                 </motion.a>
               ))}
             </nav>
+            
+            {/* Mobile 3D Map Button */}
+            {onOpen3DViewer && (
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <motion.button
+                  onClick={() => {
+                    onOpen3DViewer();
+                    setIsMenuOpen(false);
+                  }}
+                  whileHover={{ x: 10 }}
+                  className="flex items-center gap-3 w-full text-left py-3 px-4 rounded-lg bg-gradient-to-r from-space-500 to-nebula-500 text-white hover:from-space-600 hover:to-nebula-600 transition-all duration-200"
+                >
+                  <Map className="w-5 h-5" />
+                  <span className="font-medium">3D Exoplanet Map</span>
+                </motion.button>
+              </div>
+            )}
             
             <div className="flex items-center gap-4 mt-4 pt-4 border-t border-white/10">
               {socialLinks.map((link) => (

@@ -20,6 +20,7 @@ import FluxVisualization from '@/components/results/FluxVisualization';
 import DataExplorer from '@/components/ui/DataExplorer';
 import Header from '@/components/ui/Header';
 import Footer from '@/components/ui/Footer';
+import Exoplanet3DViewer from '@/components/visualization/Exoplanet3DViewer';
 
 interface FeatureImportance {
   feature: string;
@@ -57,6 +58,7 @@ export default function Home() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [showVisualization, setShowVisualization] = useState(false);
+  const [show3DViewer, setShow3DViewer] = useState(false);
 
   const handleFileUpload = (file: File) => {
     console.log('File uploaded:', file.name);
@@ -188,7 +190,7 @@ export default function Home() {
       </div>
 
       {/* Header */}
-      <Header />
+      <Header onOpen3DViewer={() => setShow3DViewer(true)} />
 
       <div className="relative z-10 pt-16">
         {appState === 'landing' && (
@@ -276,24 +278,43 @@ export default function Home() {
                   </div>
                 </motion.div>
 
-                {/* CTA Button */}
-                <motion.button
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => startAnalysis({})}
-                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cosmic-500 to-pink-500 
-                           text-white font-semibold text-lg rounded-xl shadow-lg
-                           hover:from-cosmic-600 hover:to-pink-600
-                           focus:ring-4 focus:ring-cosmic-400/20
-                           transition-all duration-200"
-                >
-                  <Sparkles className="w-6 h-6" />
-                  Analyze with AI
-                  <ArrowRight className="w-5 h-5" />
-                </motion.button>
+                {/* CTA Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <motion.button
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => startAnalysis({})}
+                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cosmic-500 to-pink-500 
+                             text-white font-semibold text-lg rounded-xl shadow-lg
+                             hover:from-cosmic-600 hover:to-pink-600
+                             focus:ring-4 focus:ring-cosmic-400/20
+                             transition-all duration-200"
+                  >
+                    <Sparkles className="w-6 h-6" />
+                    Analyze with AI
+                    <ArrowRight className="w-5 h-5" />
+                  </motion.button>
+                  
+                  <motion.button
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShow3DViewer(true)}
+                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-space-500 to-nebula-500 
+                             text-white font-semibold text-lg rounded-xl shadow-lg
+                             hover:from-space-600 hover:to-nebula-600
+                             focus:ring-4 focus:ring-space-400/20
+                             transition-all duration-200"
+                  >
+                    <Globe className="w-6 h-6" />
+                    Explore 3D Universe
+                  </motion.button>
+                </div>
               </div>
             </main>
 
@@ -435,6 +456,40 @@ export default function Home() {
           />
         )}
       </AnimatePresence>
+
+      {/* 3D Exoplanet Viewer Modal */}
+      <AnimatePresence>
+        {show3DViewer && (
+          <Exoplanet3DViewer
+            onClose={() => setShow3DViewer(false)}
+            onPlanetSelect={(planet) => {
+              console.log('Selected planet:', planet);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Floating 3D Map Button */}
+      <motion.button
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 2 }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={() => setShow3DViewer(true)}
+        className="fixed bottom-6 right-6 z-40 p-4 rounded-full bg-gradient-to-r from-space-500 to-nebula-500 text-white shadow-2xl hover:from-space-600 hover:to-nebula-600 transition-all duration-300 group"
+        title="Open 3D Exoplanet Map"
+      >
+        <Globe className="w-6 h-6" />
+        <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+          <span className="text-xs text-white font-bold">3D</span>
+        </div>
+        
+        {/* Tooltip */}
+        <div className="absolute bottom-full right-0 mb-2 px-3 py-1 bg-black/80 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+          Explore 3D Universe
+        </div>
+      </motion.button>
     </div>
   );
 }

@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Database, Filter, Download, Eye } from 'lucide-react';
+import { Database, Filter, Download, Eye, Globe } from 'lucide-react';
 import InfoTooltip from './Tooltip';
+import Simple3DViewer from '../visualization/Simple3DViewer';
 
 interface DataColumn {
   id: string;
@@ -128,6 +129,7 @@ const categoryIcons = {
 export default function DataExplorer() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showQualityFilter, setShowQualityFilter] = useState(false);
+  const [show3DViewer, setShow3DViewer] = useState(false);
 
   const filteredColumns = selectedCategory 
     ? dataColumns.filter(col => col.category === selectedCategory)
@@ -260,6 +262,32 @@ export default function DataExplorer() {
               </div>
             </motion.div>
           ))}
+        </motion.div>
+
+        {/* 3D Exoplanet Visualization */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4 }}
+          className="mt-12"
+        >
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-bold text-white mb-4">Explore Exoplanets in 3D</h3>
+            <p className="text-gray-300 max-w-2xl mx-auto">
+              Visualize known exoplanets in 3D space and explore their properties. 
+              Click on planets to learn more about their characteristics and habitability.
+            </p>
+          </div>
+          
+          <div className="glass rounded-2xl p-6">
+            <Simple3DViewer 
+              className="w-full"
+              onPlanetSelect={(planet) => {
+                console.log('Selected planet:', planet);
+              }}
+            />
+          </div>
         </motion.div>
 
         {/* Sample Data Download */}
