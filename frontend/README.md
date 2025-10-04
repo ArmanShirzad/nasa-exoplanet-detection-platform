@@ -1,79 +1,45 @@
 # NASA Exoplanet Explorer
 
-A futuristic, space-themed Next.js application for exoplanet detection using AI analysis. Built with modern web technologies and a stunning glassmorphism UI design.
+A complete Next.js + Tailwind frontend for NASA Space Apps Challenge 2025 - Exoplanet Detection. Discover worlds beyond our solar system with the same tools NASA uses.
 
-## 🚀 Features
+## Features
 
-### Landing Page
-- **Hero Section**: Space-themed background with animated elements
-- **Dual Input Options**: 
-  - File Upload (CSV/JSON) with drag-and-drop functionality
-  - Manual Parameter Entry with expandable sections
-- **Interactive UI**: Smooth animations and transitions
+### 🚀 Core Functionality
+- **File Upload**: Support for TESS/K2/Kepler CSV and JSON files with drag-and-drop
+- **Manual Input**: Form-based data entry with sample data loading
+- **AI Analysis**: Mock API endpoint with realistic exoplanet detection results
+- **Interactive Visualization**: Recharts-powered flux time series with transit highlighting
+- **Explainable AI**: Feature importance analysis with detailed explanations
 
-### Analysis Engine
-- **AI-Powered Detection**: Mock API that simulates exoplanet analysis
-- **Real-time Processing**: Loading states and progress indicators
-- **Confidence Scoring**: Statistical significance and reliability metrics
+### 🎨 UI/UX Features
+- **Glassmorphism Design**: Modern space-themed UI with subtle gradients
+- **Responsive Layout**: Mobile-first design with collapsible sections
+- **Smooth Animations**: Framer Motion for enhanced user experience
+- **Accessibility**: Keyboard navigation, ARIA labels, and screen reader support
+- **Interactive Tooltips**: Hover explanations for data columns
 
-### Results Display
-- **Verdict Cards**: Clear exoplanet detection results with confidence levels
-- **Detailed Analysis**: Expandable sections with key factors and recommendations
-- **Data Visualization**: Interactive flux time series charts using Recharts
-- **Chatbot Interface**: Conversational AI for result explanations
+### 📊 Data Visualization
+- **Interactive Charts**: Zoom, pan, and tooltip interactions
+- **Transit Highlighting**: Visual identification of potential exoplanet transits
+- **Multiple Views**: Raw and normalized flux data display
+- **Export Functionality**: Download results as JSON or CSV
 
-### Design System
-- **Space Theme**: Deep space gradients and cosmic color palette
-- **Glassmorphism**: Modern glass-like UI elements with backdrop blur
-- **Animations**: Framer Motion for smooth, engaging interactions
-- **Responsive**: Mobile-first design that works on all devices
+### 🤖 AI Chat Interface
+- **Conversational UI**: Chatbot-style interaction for result explanations
+- **Suggested Questions**: Quick-start prompts for common queries
+- **Real-time Responses**: Simulated AI explanations of analysis results
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Framework**: Next.js 15 with App Router
-- **Styling**: Tailwind CSS with custom space-themed configuration
+- **Styling**: Tailwind CSS with custom space theme
 - **Animations**: Framer Motion
-- **Charts**: Recharts for data visualization
+- **Charts**: Recharts for interactive visualizations
 - **Icons**: Lucide React
 - **Language**: TypeScript
-- **Fonts**: Inter (Google Fonts)
+- **File Handling**: React Dropzone
 
-## 🎨 Design Features
-
-### Color Palette
-- **Space Blue**: Primary brand color (#0ea5e9)
-- **Nebula Purple**: Secondary accent (#a855f7)
-- **Cosmic Gold**: Highlight color (#facc15)
-- **Deep Space**: Background gradients
-
-### UI Components
-- **Glass Cards**: Semi-transparent with backdrop blur
-- **Gradient Buttons**: Multi-color gradients with hover effects
-- **Animated Backgrounds**: Rotating cosmic elements
-- **Custom Scrollbars**: Themed scrollbar styling
-
-## 📁 Project Structure
-
-```
-src/
-├── app/
-│   ├── api/analyze/          # Mock API endpoint
-│   ├── globals.css           # Global styles and space theme
-│   ├── layout.tsx            # Root layout with metadata
-│   └── page.tsx              # Main application page
-├── components/
-│   ├── forms/
-│   │   ├── FileUpload.tsx    # Drag-and-drop file upload
-│   │   └── ManualInputForm.tsx # Manual parameter entry
-│   ├── results/
-│   │   ├── ResultsCard.tsx   # Analysis results display
-│   │   └── FluxVisualization.tsx # Data visualization modal
-│   └── ui/
-│       └── ChatInterface.tsx # Conversational AI interface
-└── tailwind.config.ts        # Custom Tailwind configuration
-```
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Node.js 18+ 
@@ -81,99 +47,162 @@ src/
 
 ### Installation
 
-1. **Install dependencies**:
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd nasa-spaceapps-2025-main/frontend
+   ```
+
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-2. **Start development server**:
+3. **Run the development server**
    ```bash
    npm run dev
    ```
 
-3. **Open in browser**:
+4. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
-### Available Scripts
+### Build for Production
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run format` - Format code with Prettier
+```bash
+npm run build
+npm start
+```
 
-## 🎯 Usage
+## Project Structure
 
-### File Upload Mode
-1. Click "Upload Data" tab
-2. Drag and drop a CSV or JSON file
-3. Click "Analyze with AI"
-4. View results in the chatbot interface
+```
+src/
+├── app/
+│   ├── api/analyze/route.ts    # Mock API endpoint
+│   ├── globals.css            # Global styles and theme
+│   ├── layout.tsx             # Root layout
+│   └── page.tsx               # Main page component
+├── components/
+│   ├── forms/
+│   │   ├── FileUpload.tsx     # CSV/JSON upload with preview
+│   │   └── ManualInputForm.tsx # Manual data entry form
+│   ├── results/
+│   │   ├── ResultsCard.tsx    # Analysis results display
+│   │   └── FluxVisualization.tsx # Interactive charts
+│   └── ui/
+│       ├── ChatInterface.tsx  # AI chat component
+│       ├── DataExplorer.tsx   # "Meet the Data" section
+│       ├── Header.tsx         # Navigation header
+│       ├── Footer.tsx         # Footer with links
+│       └── Tooltip.tsx        # Accessible tooltip component
+└── public/
+    └── sample_tess_data.csv   # Sample TESS data file
+```
 
-### Manual Input Mode
-1. Click "Enter Manually" tab
-2. Fill in the expandable sections:
-   - **Basic Parameters**: Planet radius, orbital period
-   - **Stellar Parameters**: Mass, radius, temperature
-   - **Advanced Parameters**: Flux time series data
-3. Click "Analyze with AI"
-4. Explore detailed results and visualizations
+## Key Components
 
-### Results Interaction
-- **Verdict Card**: Shows detection result with confidence
-- **Expandable Sections**: Detailed analysis, key factors, recommendations
-- **Chat Interface**: Ask questions about the analysis
-- **Data Visualization**: Interactive flux time series charts
+### FileUpload.tsx
+- Drag-and-drop file upload
+- CSV/JSON parsing and preview
+- Sample data loading
+- File validation and error handling
 
-## 🔧 Customization
+### ManualInputForm.tsx
+- Comprehensive form with all required fields
+- Collapsible sections for better UX
+- Sample TESS/K2 data loading
+- Real-time validation
 
-### Adding New Analysis Parameters
-1. Update the `ManualInputForm` component
-2. Modify the API route in `src/app/api/analyze/route.ts`
-3. Update TypeScript interfaces
+### DataExplorer.tsx
+- Interactive "Meet the Data" section
+- Hover tooltips with exact NASA copy
+- Category filtering and search
+- Quality flag explanations
 
-### Styling Modifications
-1. Edit `tailwind.config.ts` for color palette changes
-2. Modify `globals.css` for global styles
-3. Update component-specific Tailwind classes
+### ResultsCard.tsx
+- Verdict display with confidence meter
+- Feature importance visualization
+- Expandable explanation sections
+- Download functionality
 
-### API Integration
-Replace the mock API in `src/app/api/analyze/route.ts` with your actual exoplanet detection service.
+### FluxVisualization.tsx
+- Interactive Recharts implementation
+- Transit highlighting
+- Normalized/raw data toggle
+- Export capabilities
 
-## 🌟 Key Features Implemented
+## API Integration
 
-✅ **Landing Page** with space-themed hero section  
-✅ **Dual Input Modes** (file upload + manual entry)  
-✅ **Drag-and-Drop File Upload** with validation  
-✅ **Expandable Manual Form** with organized sections  
-✅ **Chatbot-Style Results** with conversational AI  
-✅ **Interactive Data Visualization** with Recharts  
-✅ **Glassmorphism Design** with space aesthetics  
-✅ **Smooth Animations** using Framer Motion  
-✅ **Responsive Design** for all screen sizes  
-✅ **Mock API Integration** with realistic responses  
-✅ **TypeScript Support** for type safety  
-✅ **Production-Ready** code structure  
+The app includes a mock API endpoint (`/api/analyze`) that simulates real exoplanet detection analysis:
 
-## 🎨 Design Philosophy
+### Request Format
+```typescript
+{
+  mode: "upload" | "manual",
+  metadata: { ... },
+  timeseries: [{time: number, flux: number, flux_err?: number}],
+  raw_file_preview?: [...]
+}
+```
 
-The application embraces a **futuristic space aesthetic** with:
-- Deep space color gradients
-- Glassmorphism UI elements
-- Smooth, purposeful animations
-- Clean, minimal interface design
-- Intuitive user interactions
+### Response Format
+```typescript
+{
+  verdict: "Exoplanet Detected" | "Not an Exoplanet",
+  confidence: number,
+  explanation: string,
+  feature_importances: [
+    {feature: string, importance: number, detail: string}
+  ],
+  annotated_timeseries: [
+    {time: number, flux: number, highlight: boolean}
+  ]
+}
+```
 
-Every element is designed to evoke the wonder of space exploration while maintaining excellent usability and accessibility.
+## Customization
 
-## 📱 Browser Support
+### Theme Colors
+Edit `tailwind.config.ts` to customize the space theme:
+- `space`: Blue color palette
+- `nebula`: Purple color palette  
+- `cosmic`: Gold color palette
 
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
+### Sample Data
+Replace `public/sample_tess_data.csv` with your own sample data following the same column structure.
 
-## 🤝 Contributing
+## Deployment
+
+### Vercel (Recommended)
+1. Push to GitHub
+2. Connect to Vercel
+3. Deploy automatically
+
+### Other Platforms
+Build the project and deploy the `out` directory to any static hosting service.
+
+## Development Notes
+
+### Adding Real AI Backend
+To integrate with a real AI model:
+
+1. Replace the mock API in `src/app/api/analyze/route.ts`
+2. Update the request/response interfaces as needed
+3. Add environment variables for API keys
+4. Implement proper error handling
+
+### Performance Optimization
+- Images are optimized with Next.js Image component
+- Components use React.memo where appropriate
+- Charts are lazy-loaded for better performance
+
+### Accessibility
+- All interactive elements have proper ARIA labels
+- Keyboard navigation is fully supported
+- Color contrast meets WCAG guidelines
+- Screen reader compatibility tested
+
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -181,10 +210,18 @@ Every element is designed to evoke the wonder of space exploration while maintai
 4. Test thoroughly
 5. Submit a pull request
 
-## 📄 License
+## License
 
-This project is part of the NASA Space Apps Challenge 2025.
+This project is developed for NASA Space Apps Challenge 2025. Please refer to the challenge guidelines for usage terms.
+
+## Acknowledgments
+
+- NASA Space Apps Challenge 2025
+- TESS, Kepler, and K2 missions for data inspiration
+- Recharts for beautiful visualizations
+- Tailwind CSS for rapid styling
+- Framer Motion for smooth animations
 
 ---
 
-**Built with ❤️ for space exploration and exoplanet discovery**
+**Built with ❤️ for space exploration and scientific discovery**
