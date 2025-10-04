@@ -113,13 +113,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </div>
             <div>
               <h3 className="font-semibold text-white">NASA AI Assistant</h3>
-              <p className="text-xs text-gray-400">Exoplanet Detection Analysis</p>
+              <p className="text-xs text-gray-400">
+                {messages.length === 0 ? 'Ask me about exoplanet detection' : 'Analyzing your results'}
+              </p>
             </div>
           </div>
           
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            aria-label={isExpanded ? 'Collapse chat' : 'Expand chat'}
           >
             {isExpanded ? (
               <ChevronDown className="w-5 h-5 text-gray-400" />
@@ -145,6 +148,37 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   <MessageBubble key={message.id} message={message} />
                 ))}
               </AnimatePresence>
+              
+              {/* Welcome message when no messages */}
+              {messages.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center py-8"
+                >
+                  <div className="space-y-4">
+                    <p className="text-gray-400 text-sm">
+                      Hi! I&apos;m your NASA AI assistant. I can help explain the analysis results and answer questions about exoplanet detection.
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {[
+                        "What does the transit depth tell us?",
+                        "How confident is this detection?",
+                        "What are the key factors?",
+                        "Explain the feature importance"
+                      ].map((question) => (
+                        <button
+                          key={question}
+                          onClick={() => onSendMessage(question)}
+                          className="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 text-gray-300 rounded-lg transition-colors"
+                        >
+                          {question}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
               
               {isLoading && (
                 <motion.div
@@ -216,3 +250,4 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 };
 
 export default ChatInterface;
+
