@@ -15,6 +15,7 @@ import {
 import FileUpload from '@/components/forms/FileUpload';
 import TabbedUpload from '@/components/ui/TabbedUpload';
 import ManualInputForm from '@/components/forms/ManualInputForm';
+import TabularMVPForm, { TabularFeaturesInput } from '@/components/forms/TabularMVPForm';
 import ChatInterface from '@/components/ui/ChatInterface';
 import ResultsCard from '@/components/results/ResultsCard';
 import FluxVisualization from '@/components/results/FluxVisualization';
@@ -69,6 +70,43 @@ export default function Home() {
   const handleManualSubmit = (data: unknown) => {
     console.log('Manual data submitted:', data);
     startAnalysis(data);
+  };
+
+  const submitTabularMVP = async (features: TabularFeaturesInput) => {
+    setIsAnalyzing(true);
+    setAppState('analyzing');
+    try {
+      const resp = await fetch('/api/tabular/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ features: {
+          period_days: Number(features.period_days),
+          transit_depth_ppm: Number(features.transit_depth_ppm),
+          planet_radius_re: Number(features.planet_radius_re),
+          stellar_radius_rs: Number(features.stellar_radius_rs),
+          snr: Number(features.snr),
+        }, mission: 'KEPLER', object_id: 'UI-MVP' }),
+      });
+      const data = await resp.json();
+      // Map backend TabularResponse -> AnalysisResult UI shape
+      const result = {
+        verdict: data.label === 'CONFIRMED' ? 'Exoplanet Detected' : 'Not an Exoplanet',
+        confidence: Math.round((data.calibrated_confidence ?? data.probabilities?.CONFIRMED ?? 0) * 100),
+        explanation: typeof data.explanations?.text === 'string' ? data.explanations.text : 'Baseline RF prediction.',
+        feature_importances: (Array.isArray(data.explanations?.top_shap) ? data.explanations.top_shap : []).map((s: any) => ({
+          feature: String(s.feature),
+          importance: Math.abs(Number(s.shap) || 0),
+          detail: `value=${s.value}`
+        })),
+      } as AnalysisResult;
+      setAnalysisResult(result);
+      setAppState('results');
+    } catch (e) {
+      console.error(e);
+      setAppState('landing');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const startAnalysis = async (data: unknown) => {
@@ -272,6 +310,11 @@ export default function Home() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                         >
+                          {/* MVP: Simple five-field tabular input */}
+                          <div className="mb-6">
+                            <TabularMVPForm onSubmit={submitTabularMVP} />
+                          </div>
+                          {/* Advanced manual (light curve + metadata) retained below */}
                           <ManualInputForm onSubmit={handleManualSubmit} />
                         </motion.div>
                       )}
