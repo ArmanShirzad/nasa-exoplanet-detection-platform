@@ -12,6 +12,42 @@ export interface TabularFeaturesInput {
   snr: number | string;
 }
 
+// Individual input component to prevent re-renders
+const FormInput = React.memo(({ 
+  label, 
+  field, 
+  unit, 
+  value, 
+  error, 
+  onChange, 
+  onBlur 
+}: { 
+  label: string; 
+  field: keyof TabularFeaturesInput; 
+  unit?: string;
+  value: string | number;
+  error: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
+}) => (
+  <div className="space-y-2">
+    <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
+      <Hash className="w-4 h-4 text-space-400" />
+      {label}
+      {unit && <span className="text-xs text-gray-500">({unit})</span>}
+    </label>
+    <input
+      type="number"
+      value={value}
+      onChange={onChange}
+      onBlur={onBlur}
+      placeholder="e.g., 10.5"
+      className={`w-full px-4 py-3 bg-white/5 border rounded-lg focus:ring-2 focus:ring-space-400/20 transition-all duration-200 text-white placeholder-gray-400 backdrop-blur-sm ${error ? 'border-red-400 focus:border-red-400' : 'border-gray-600 focus:border-space-400'}`}
+    />
+    {error && <p className="text-xs text-red-400">{error}</p>}
+  </div>
+));
+
 export default function TabularMVPForm({ onSubmit }: { onSubmit: (features: TabularFeaturesInput) => void }) {
   const [features, setFeatures] = useState<TabularFeaturesInput>({
     period_days: '',
@@ -61,25 +97,6 @@ export default function TabularMVPForm({ onSubmit }: { onSubmit: (features: Tabu
     });
   }, [features, errors]);
 
-  const Input = useCallback(({ label, field, unit }: { label: string; field: keyof TabularFeaturesInput; unit?: string }) => (
-    <div className="space-y-2">
-      <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
-        <Hash className="w-4 h-4 text-space-400" />
-        {label}
-        {unit && <span className="text-xs text-gray-500">({unit})</span>}
-      </label>
-      <input
-        type="number"
-        value={features[field]}
-        onChange={(e) => { update(field, e.target.value); }}
-        onBlur={(e) => { validateField(field, e.target.value); }}
-        placeholder="e.g., 10.5"
-        className={`w-full px-4 py-3 bg-white/5 border rounded-lg focus:ring-2 focus:ring-space-400/20 transition-all duration-200 text-white placeholder-gray-400 backdrop-blur-sm ${errors[field] ? 'border-red-400 focus:border-red-400' : 'border-gray-600 focus:border-space-400'}`}
-      />
-      {errors[field] && <p className="text-xs text-red-400">{errors[field]}</p>}
-    </div>
-  ), [features, errors, update, validateField]);
-
   return (
     <motion.form
       initial={{ opacity: 0, y: 10 }}
@@ -88,11 +105,46 @@ export default function TabularMVPForm({ onSubmit }: { onSubmit: (features: Tabu
       className="space-y-4"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input label="period_days" field="period_days" />
-        <Input label="transit_depth_ppm" field="transit_depth_ppm" />
-        <Input label="planet_radius_re" field="planet_radius_re" />
-        <Input label="stellar_radius_rs" field="stellar_radius_rs" />
-        <Input label="snr" field="snr" />
+        <FormInput 
+          label="period_days" 
+          field="period_days" 
+          value={features.period_days}
+          error={errors.period_days || ''}
+          onChange={(e) => update('period_days', e.target.value)}
+          onBlur={(e) => validateField('period_days', e.target.value)}
+        />
+        <FormInput 
+          label="transit_depth_ppm" 
+          field="transit_depth_ppm" 
+          value={features.transit_depth_ppm}
+          error={errors.transit_depth_ppm || ''}
+          onChange={(e) => update('transit_depth_ppm', e.target.value)}
+          onBlur={(e) => validateField('transit_depth_ppm', e.target.value)}
+        />
+        <FormInput 
+          label="planet_radius_re" 
+          field="planet_radius_re" 
+          value={features.planet_radius_re}
+          error={errors.planet_radius_re || ''}
+          onChange={(e) => update('planet_radius_re', e.target.value)}
+          onBlur={(e) => validateField('planet_radius_re', e.target.value)}
+        />
+        <FormInput 
+          label="stellar_radius_rs" 
+          field="stellar_radius_rs" 
+          value={features.stellar_radius_rs}
+          error={errors.stellar_radius_rs || ''}
+          onChange={(e) => update('stellar_radius_rs', e.target.value)}
+          onBlur={(e) => validateField('stellar_radius_rs', e.target.value)}
+        />
+        <FormInput 
+          label="snr" 
+          field="snr" 
+          value={features.snr}
+          error={errors.snr || ''}
+          onChange={(e) => update('snr', e.target.value)}
+          onBlur={(e) => validateField('snr', e.target.value)}
+        />
       </div>
 
       <motion.button
