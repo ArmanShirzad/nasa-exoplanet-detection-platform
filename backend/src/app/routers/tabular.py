@@ -108,7 +108,7 @@ def predict_tabular(req: TabularRequest) -> TabularResponse:
     feature_values = {
         "period_days": req.features.period_days,
         "transit_depth_ppm": req.features.transit_depth_ppm,
-        "planet_radius_re": req.features.rp_over_rs,  # fallback: not provided directly in request schema
+        "planet_radius_re": req.features.planet_radius_re,
         "stellar_radius_rs": req.features.stellar_radius_rs,
         "snr": req.features.snr,
     }

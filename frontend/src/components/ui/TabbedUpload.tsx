@@ -7,8 +7,19 @@ import FileUpload from '@/components/forms/FileUpload';
 
 type UploadTab = 'tabular' | 'lightcurve';
 
+interface ParsedData {
+  headers: string[];
+  rows: unknown[][];
+  preview: Record<string, unknown>[];
+  fileType: 'csv' | 'json';
+  metadata?: {
+    totalRows: number;
+    columns: number;
+  };
+}
+
 interface TabbedUploadProps {
-  onFileSelect?: (file: File) => void;
+  onFileSelect?: (file: File, parsedData?: ParsedData) => void;
 }
 
 const TabbedUpload: React.FC<TabbedUploadProps> = ({ onFileSelect }) => {
@@ -63,9 +74,9 @@ const TabbedUpload: React.FC<TabbedUploadProps> = ({ onFileSelect }) => {
           exit={{ opacity: 0, x: -20 }}
         >
           {activeTab === 'tabular' ? (
-            <FileUpload onFileSelect={(f) => onFileSelect?.(f)} acceptedTypes={[ '.csv' ]} hideSampleButton />
+            <FileUpload onFileSelect={(f, p) => onFileSelect?.(f, p)} acceptedTypes={[ '.csv' ]} hideSampleButton />
           ) : (
-            <FileUpload onFileSelect={(f) => onFileSelect?.(f)} acceptedTypes={[ '.csv' ]} hideSampleButton />
+            <FileUpload onFileSelect={(f, p) => onFileSelect?.(f, p)} acceptedTypes={[ '.csv' ]} hideSampleButton />
           )}
         </motion.div>
       </AnimatePresence>
