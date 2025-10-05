@@ -70,6 +70,7 @@ export default function TabularMVPForm({ onSubmit }: { onSubmit: (features: Tabu
         type="number"
         value={features[field]}
         onChange={(e) => { update(field, e.target.value); validateField(field, e.target.value); }}
+        onBlur={(e) => { validateField(field, e.target.value); }}
         placeholder="e.g., 10.5"
         className={`w-full px-4 py-3 bg-white/5 border rounded-lg focus:ring-2 focus:ring-space-400/20 transition-all duration-200 text-white placeholder-gray-400 backdrop-blur-sm ${errors[field] ? 'border-red-400 focus:border-red-400' : 'border-gray-600 focus:border-space-400'}`}
       />

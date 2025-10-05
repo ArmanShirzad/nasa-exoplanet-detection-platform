@@ -3,18 +3,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Upload, 
-  FileText, 
   Sparkles, 
   Globe, 
   Star, 
   Activity,
   ArrowRight
 } from 'lucide-react';
-
-import FileUpload from '@/components/forms/FileUpload';
-import TabbedUpload from '@/components/ui/TabbedUpload';
-import ManualInputForm from '@/components/forms/ManualInputForm';
 import TabularMVPForm, { TabularFeaturesInput } from '@/components/forms/TabularMVPForm';
 import ChatInterface from '@/components/ui/ChatInterface';
 import ResultsCard from '@/components/results/ResultsCard';
@@ -50,117 +44,17 @@ interface Message {
   isTyping?: boolean;
 }
 
-type InputMode = 'upload' | 'manual';
+type InputMode = 'manual';
 type AppState = 'landing' | 'analyzing' | 'results';
 
 export default function Home() {
-  const [inputMode, setInputMode] = useState<InputMode>('upload');
+  const [inputMode, setInputMode] = useState<InputMode>('manual');
   const [appState, setAppState] = useState<AppState>('landing');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [showVisualization, setShowVisualization] = useState(false);
   const [show3DViewer, setShow3DViewer] = useState(false);
-
-  const handleFileUpload = async (file: File, parsedData?: { headers: string[]; preview: Record<string, unknown>[] }) => {
-    try {
-      if (!parsedData?.headers?.length) {
-        console.warn('No parsed data available for upload.');
-        return;
-      }
-
-      // Decide route by headers
-      const headersLower = parsedData.headers.map(h => h.toLowerCase());
-      const isLightcurve = headersLower.includes('time') && headersLower.includes('pdcsap_flux');
-      const isTabular = ['period_days','transit_depth_ppm','planet_radius_re','stellar_radius_rs','snr']
-        .every(h => headersLower.includes(h));
-
-      setIsAnalyzing(true);
-      setAppState('analyzing');
-
-      if (isLightcurve) {
-        // Build minimal LCRequest from preview rows
-        const time: number[] = [];
-        const flux: number[] = [];
-        const flux_err: number[] = [];
-        parsedData.preview.forEach(row => {
-          const t = Number(row['TIME'] ?? row['time']);
-          const f = Number(row['PDCSAP_FLUX'] ?? row['flux']);
-          const fe = row['PDCSAP_FLUX_ERR'] ?? row['flux_err'];
-          if (!Number.isNaN(t) && !Number.isNaN(f)) {
-            time.push(t);
-            flux.push(f);
-            if (fe !== undefined) flux_err.push(Number(fe));
-          }
-        });
-
-        const lcReq = {
-          input: { source: 'upload', mission: 'TESS', object_id: file.name },
-          data: { time, flux, flux_err: flux_err.length ? flux_err : undefined },
-        };
-
-        const resp = await fetch('/api/lightcurve/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(lcReq),
-        });
-        const data = await resp.json();
-        const result: AnalysisResult = {
-          verdict: data.label === 'CONFIRMED' ? 'Exoplanet Detected' : 'Not an Exoplanet',
-          confidence: Math.round((data.probability ?? 0.8) * 100),
-          explanation: typeof data.explanations?.text === 'string' ? data.explanations.text : 'Light curve pipeline result.',
-          feature_importances: (Array.isArray(data.explanations?.top_shap) ? data.explanations.top_shap : []).map((s: any) => ({
-            feature: String(s.feature),
-            importance: Math.abs(Number(s.shap) || 0),
-            detail: `value=${s.value}`,
-          })),
-          annotated_timeseries: (data.plots || data.transit_params) ? parsedData.preview.map((r: any, idx: number) => ({
-            time: Number(r.TIME ?? r.time ?? idx),
-            flux: Number(r.PDCSAP_FLUX ?? r.flux ?? 1),
-            highlight: false,
-          })) : undefined,
-        };
-        setAnalysisResult(result);
-        setAppState('results');
-      } else if (isTabular) {
-        // Use first row for MVP prediction
-        const row = parsedData.preview[0] || {};
-        const features = {
-          period_days: Number(row['period_days'] ?? row['PERIOD_DAYS'] ?? 0),
-          transit_depth_ppm: Number(row['transit_depth_ppm'] ?? row['TRANSIT_DEPTH_PPM'] ?? 0),
-          planet_radius_re: Number(row['planet_radius_re'] ?? row['PLANET_RADIUS_RE'] ?? 0),
-          stellar_radius_rs: Number(row['stellar_radius_rs'] ?? row['STELLAR_RADIUS_RS'] ?? 0),
-          snr: Number(row['snr'] ?? row['SNR'] ?? 0),
-        };
-        const resp = await fetch('/api/tabular/predict', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mission: 'KEPLER', object_id: file.name, features }),
-        });
-        const data = await resp.json();
-        const result = {
-          verdict: data.label === 'CONFIRMED' ? 'Exoplanet Detected' : 'Not an Exoplanet',
-          confidence: Math.round((data.calibrated_confidence ?? data.probabilities?.CONFIRMED ?? 0) * 100),
-          explanation: typeof data.explanations?.text === 'string' ? data.explanations.text : 'Baseline RF prediction.',
-          feature_importances: (Array.isArray(data.explanations?.top_shap) ? data.explanations.top_shap : []).map((s: any) => ({
-            feature: String(s.feature),
-            importance: Math.abs(Number(s.shap) || 0),
-            detail: `value=${s.value}`
-          })),
-        } as AnalysisResult;
-        setAnalysisResult(result);
-        setAppState('results');
-      } else {
-        console.warn('Unrecognized CSV schema; cannot route upload.');
-        setAppState('landing');
-      }
-    } catch (e) {
-      console.error('Upload handling error:', e);
-      setAppState('landing');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
 
   const handleManualSubmit = (data: unknown) => {
     console.log('Manual data submitted:', data);
@@ -212,9 +106,7 @@ export default function Home() {
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
-      content: inputMode === 'upload' 
-        ? 'I uploaded a data file for analysis'
-        : 'I submitted manual data for analysis',
+      content: 'I submitted manual data for analysis',
       timestamp: new Date()
     };
     
@@ -355,63 +247,23 @@ export default function Home() {
                   </p>
                 </motion.div>
 
-                {/* Input Mode Selection */}
+                {/* Manual Input Form */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                   className="mb-8"
                 >
-                  <div className="flex items-center justify-center gap-4 mb-8">
-                    <button
-                      onClick={() => setInputMode('upload')}
-                      className={`flex items-center gap-3 px-6 py-3 rounded-lg transition-all duration-200 ${
-                        inputMode === 'upload'
-                          ? 'bg-gradient-to-r from-space-500 to-nebula-500 text-white shadow-lg'
-                          : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                      }`}
-                    >
-                      <Upload className="w-5 h-5" />
-                      Upload Data
-                    </button>
-                    <button
-                      onClick={() => setInputMode('manual')}
-                      className={`flex items-center gap-3 px-6 py-3 rounded-lg transition-all duration-200 ${
-                        inputMode === 'manual'
-                          ? 'bg-gradient-to-r from-space-500 to-nebula-500 text-white shadow-lg'
-                          : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                      }`}
-                    >
-                      <FileText className="w-5 h-5" />
-                      Enter Manually
-                    </button>
-                  </div>
-
                   <div className="glass rounded-2xl p-8">
-                    <AnimatePresence mode="wait">
-                      {inputMode === 'upload' ? (
-                        <motion.div
-                          key="upload"
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                        >
-                          <TabbedUpload onFileSelect={handleFileUpload} />
-                        </motion.div>
-                      ) : (
-                        <motion.div
-                          key="manual"
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                        >
-                          {/* MVP: Simple five-field tabular input only */}
-                          <div className="mb-6">
-                            <TabularMVPForm onSubmit={submitTabularMVP} />
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                    >
+                      {/* MVP: Simple five-field tabular input only */}
+                      <div className="mb-6">
+                        <TabularMVPForm onSubmit={submitTabularMVP} />
+                      </div>
+                    </motion.div>
                   </div>
                 </motion.div>
 
