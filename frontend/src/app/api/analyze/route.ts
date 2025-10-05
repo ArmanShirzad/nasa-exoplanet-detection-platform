@@ -1,26 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 interface AnalysisRequest {
-  planetRadius?: number;
-  orbitalPeriod?: number;
-  fluxTimeSeries?: string;
-  stellarMass?: number;
-  stellarRadius?: number;
-  effectiveTemperature?: number;
-  fileData?: any;
+  mode: 'upload' | 'manual';
+  metadata?: {
+    targetId?: string;
+    raObj?: string;
+    decObj?: string;
+    keptmagTmag?: string;
+    teff?: string;
+    logg?: string;
+    feh?: string;
+    radius?: string;
+    mass?: string;
+    quality?: string;
+    sectorQuarter?: string;
+    camera?: string;
+    ccd?: string;
+  };
+  timeseries?: Array<{
+    time: number;
+    flux: number;
+    flux_err?: number;
+  }>;
+  raw_file_preview?: unknown[];
+}
+
+interface FeatureImportance {
+  feature: string;
+  importance: number;
+  detail: string;
 }
 
 interface AnalysisResult {
   verdict: 'Exoplanet Detected' | 'Not an Exoplanet';
   confidence: number;
   explanation: string;
-  details: {
-    keyFactors: string[];
-    statisticalSignificance: number;
-    alternativeHypotheses: string[];
-    recommendations: string[];
-  };
-  fluxData?: number[];
+  feature_importances: FeatureImportance[];
+  annotated_timeseries?: Array<{
+    time: number;
+    flux: number;
+    highlight: boolean;
+  }>;
 }
 
 export async function POST(request: NextRequest) {
@@ -34,51 +54,93 @@ export async function POST(request: NextRequest) {
     const isExoplanet = Math.random() > 0.4; // 60% chance of exoplanet detection
     const confidence = Math.floor(Math.random() * 30) + 70; // 70-100% confidence
     
+    // Generate feature importances
+    const featureImportances: FeatureImportance[] = isExoplanet ? [
+      {
+        feature: "Transit Depth",
+        importance: 0.34,
+        detail: "Depth corresponds to ~1.2 Earth radii planet."
+      },
+      {
+        feature: "SNR",
+        importance: 0.22,
+        detail: "High signal-to-noise ratio after detrending."
+      },
+      {
+        feature: "Duration",
+        importance: 0.18,
+        detail: "Transit duration consistent with orbital mechanics."
+      },
+      {
+        feature: "Odd-Even Depth",
+        importance: 0.12,
+        detail: "Consistent depths across multiple transits."
+      },
+      {
+        feature: "Stellar Activity",
+        importance: 0.08,
+        detail: "Low stellar variability, clean transit signal."
+      },
+      {
+        feature: "Period Consistency",
+        importance: 0.06,
+        detail: "Regular periodicity matches orbital prediction."
+      }
+    ] : [
+      {
+        feature: "Transit Depth",
+        importance: 0.25,
+        detail: "Depth variations inconsistent with planetary transits."
+      },
+      {
+        feature: "Stellar Activity",
+        importance: 0.30,
+        detail: "High stellar variability masks potential signals."
+      },
+      {
+        feature: "Noise Level",
+        importance: 0.20,
+        detail: "Instrumental noise exceeds signal detection threshold."
+      },
+      {
+        feature: "Periodicity",
+        importance: 0.15,
+        detail: "No clear periodic pattern detected."
+      },
+      {
+        feature: "Quality Flags",
+        importance: 0.10,
+        detail: "Data quality flags indicate systematic issues."
+      }
+    ];
+    
+    // Generate annotated timeseries
+    const annotatedTimeseries = data.timeseries?.map(point => ({
+      time: point.time,
+      flux: point.flux,
+      highlight: isExoplanet && Math.random() > 0.85 // Highlight some points as potential transits
+    })) || Array.from({ length: 100 }, (_, i) => {
+      const time = 2454833 + i * 0.1;
+      const baseFlux = 1.0;
+      const noise = (Math.random() - 0.5) * 0.01;
+      const transitDepth = isExoplanet && i > 40 && i < 60 ? -0.02 : 0;
+      const highlight = isExoplanet && i > 40 && i < 60;
+      
+      return {
+        time,
+        flux: baseFlux + transitDepth + noise,
+        highlight
+      };
+    });
+    
     const result: AnalysisResult = {
       verdict: isExoplanet ? 'Exoplanet Detected' : 'Not an Exoplanet',
       confidence,
       explanation: isExoplanet 
-        ? "Based on the flux pattern analysis, the data shows characteristics consistent with exoplanet transit signatures. The periodic dimming pattern and depth suggest a planetary companion orbiting the host star."
-        : "The analysis indicates that the observed flux variations are likely due to stellar activity, instrumental noise, or other non-planetary phenomena. No clear exoplanet signature was detected.",
-      details: {
-        keyFactors: isExoplanet ? [
-          "Periodic flux variations detected with consistent timing",
-          "Transit depth consistent with planetary radius estimates",
-          "Stellar parameters within habitable zone range",
-          "Statistical significance above detection threshold"
-        ] : [
-          "Irregular flux variations inconsistent with planetary transits",
-          "No clear periodic pattern detected",
-          "Variations likely due to stellar activity",
-          "Insufficient statistical significance for exoplanet detection"
-        ],
-        statisticalSignificance: Math.floor(Math.random() * 20) + 75, // 75-95%
-        alternativeHypotheses: [
-          "Stellar variability and activity",
-          "Instrumental noise and systematic errors",
-          "Binary star system interactions",
-          "Asteroid or debris field transits"
-        ],
-        recommendations: isExoplanet ? [
-          "Conduct follow-up observations to confirm detection",
-          "Perform radial velocity measurements for mass determination",
-          "Analyze additional transit events for period confirmation",
-          "Characterize stellar properties for better planetary modeling"
-        ] : [
-          "Collect additional data with longer observation periods",
-          "Improve data quality and reduce systematic noise",
-          "Consider alternative detection methods",
-          "Analyze stellar activity patterns in detail"
-        ]
-      },
-      fluxData: Array.from({ length: 100 }, (_, i) => {
-        const baseFlux = 1.0;
-        const noise = (Math.random() - 0.5) * 0.01;
-        const periodicVariation = isExoplanet 
-          ? 0.02 * Math.sin(i * 0.2) * Math.exp(-Math.abs(i - 50) / 20)
-          : 0.005 * Math.sin(i * 0.1 + Math.random() * 2);
-        return baseFlux + periodicVariation + noise;
-      })
+        ? "The flux pattern matches known exoplanet signatures: periodic transit dips with consistent depth and duration. The detected signal shows characteristics typical of a planetary companion with a radius of approximately 1.2 Earth radii orbiting in the stellar habitable zone."
+        : "The flux variations observed are inconsistent with planetary transit signatures. The data shows irregular patterns more characteristic of stellar activity, instrumental noise, or other astrophysical phenomena. No statistically significant exoplanet signal was detected.",
+      feature_importances: featureImportances,
+      annotated_timeseries: annotatedTimeseries
     };
 
     return NextResponse.json(result);
@@ -90,3 +152,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

@@ -9,7 +9,6 @@ import {
   Globe, 
   Star, 
   Activity,
-  ChevronRight,
   ArrowRight
 } from 'lucide-react';
 
@@ -18,18 +17,27 @@ import ManualInputForm from '@/components/forms/ManualInputForm';
 import ChatInterface from '@/components/ui/ChatInterface';
 import ResultsCard from '@/components/results/ResultsCard';
 import FluxVisualization from '@/components/results/FluxVisualization';
+import DataExplorer from '@/components/ui/DataExplorer';
+import Header from '@/components/ui/Header';
+import Footer from '@/components/ui/Footer';
+import Exoplanet3DViewer from '@/components/visualization/Exoplanet3DViewer';
+
+interface FeatureImportance {
+  feature: string;
+  importance: number;
+  detail: string;
+}
 
 interface AnalysisResult {
   verdict: 'Exoplanet Detected' | 'Not an Exoplanet';
   confidence: number;
   explanation: string;
-  details?: {
-    keyFactors: string[];
-    statisticalSignificance: number;
-    alternativeHypotheses: string[];
-    recommendations: string[];
-  };
-  fluxData?: number[];
+  feature_importances: FeatureImportance[];
+  annotated_timeseries?: Array<{
+    time: number;
+    flux: number;
+    highlight: boolean;
+  }>;
 }
 
 interface Message {
@@ -50,18 +58,19 @@ export default function Home() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [showVisualization, setShowVisualization] = useState(false);
+  const [show3DViewer, setShow3DViewer] = useState(false);
 
   const handleFileUpload = (file: File) => {
     console.log('File uploaded:', file.name);
     // Here you would typically process the file
   };
 
-  const handleManualSubmit = (data: any) => {
+  const handleManualSubmit = (data: unknown) => {
     console.log('Manual data submitted:', data);
     startAnalysis(data);
   };
 
-  const startAnalysis = async (data: any) => {
+  const startAnalysis = async (data: unknown) => {
     setIsAnalyzing(true);
     setAppState('analyzing');
     
@@ -71,7 +80,7 @@ export default function Home() {
       type: 'user',
       content: inputMode === 'upload' 
         ? 'I uploaded a data file for analysis'
-        : `I submitted manual data: Planet Radius: ${data.planetRadius}, Orbital Period: ${data.orbitalPeriod}`,
+        : 'I submitted manual data for analysis',
       timestamp: new Date()
     };
     
@@ -180,32 +189,16 @@ export default function Home() {
         />
       </div>
 
-      <div className="relative z-10">
+      {/* Header */}
+      <Header onOpen3DViewer={() => setShow3DViewer(true)} />
+
+      <div className="relative z-10 pt-16">
         {appState === 'landing' && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="min-h-screen flex flex-col"
           >
-            {/* Header */}
-            <header className="p-6">
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-space-500 to-nebula-500 flex items-center justify-center">
-                    <Globe className="w-6 h-6 text-white" />
-                  </div>
-                  <h1 className="text-xl font-bold text-white">NASA Exoplanet Explorer</h1>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <Star className="w-4 h-4" />
-                  <span>Powered by AI</span>
-                </div>
-              </motion.div>
-            </header>
 
             {/* Hero Section */}
             <main className="flex-1 flex items-center justify-center px-6">
@@ -224,8 +217,7 @@ export default function Home() {
                     <span className="text-gradient-cosmic">Explorer</span>
                   </h1>
                   <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
-                    Discover exoplanets using advanced AI analysis. Upload your astronomical data 
-                    or enter parameters manually to detect potential planetary companions.
+                    Discover worlds beyond our solar system with the same tools NASA uses.
                   </p>
                 </motion.div>
 
@@ -286,26 +278,97 @@ export default function Home() {
                   </div>
                 </motion.div>
 
-                {/* CTA Button */}
-                <motion.button
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => startAnalysis({})}
-                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cosmic-500 to-pink-500 
-                           text-white font-semibold text-lg rounded-xl shadow-lg
-                           hover:from-cosmic-600 hover:to-pink-600
-                           focus:ring-4 focus:ring-cosmic-400/20
-                           transition-all duration-200"
-                >
-                  <Sparkles className="w-6 h-6" />
-                  Analyze with AI
-                  <ArrowRight className="w-5 h-5" />
-                </motion.button>
+                {/* CTA Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <motion.button
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => startAnalysis({})}
+                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cosmic-500 to-pink-500 
+                             text-white font-semibold text-lg rounded-xl shadow-lg
+                             hover:from-cosmic-600 hover:to-pink-600
+                             focus:ring-4 focus:ring-cosmic-400/20
+                             transition-all duration-200"
+                  >
+                    <Sparkles className="w-6 h-6" />
+                    Analyze with AI
+                    <ArrowRight className="w-5 h-5" />
+                  </motion.button>
+                  
+                  <motion.button
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShow3DViewer(true)}
+                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-space-500 to-nebula-500 
+                             text-white font-semibold text-lg rounded-xl shadow-lg
+                             hover:from-space-600 hover:to-nebula-600
+                             focus:ring-4 focus:ring-space-400/20
+                             transition-all duration-200"
+                  >
+                    <Globe className="w-6 h-6" />
+                    Explore 3D Universe
+                  </motion.button>
+                </div>
               </div>
             </main>
+
+            {/* Meet the Data Section */}
+            <section id="data">
+              <DataExplorer />
+            </section>
+
+            {/* About Team and Challenge Section */}
+            <section id="about" className="py-16 px-6">
+              <div className="max-w-6xl mx-auto">
+                <div className="grid md:grid-cols-2 gap-8">
+                  {/* About Team */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="glass rounded-2xl p-8"
+                  >
+                    <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-space-500 to-nebula-500 flex items-center justify-center">
+                        <Star className="w-4 h-4 text-white" />
+                      </div>
+                      About the Team
+                    </h3>
+                    <blockquote className="text-gray-300 leading-relaxed italic">
+                      &ldquo;I&apos;m a passionate geek at heart—my friends call me a nerd :D. Technology and AI are unlocking a brighter future for science. If solving cosmic mysteries resonates with you, join me and let&apos;s build that future together!&rdquo;
+                    </blockquote>
+                  </motion.div>
+
+                  {/* About Challenge */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.1 }}
+                    className="glass rounded-2xl p-8"
+                  >
+                    <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cosmic-500 to-pink-500 flex items-center justify-center">
+                        <Globe className="w-4 h-4 text-white" />
+                      </div>
+                      About the Challenge
+                    </h3>
+                    <blockquote className="text-gray-300 leading-relaxed italic">
+                      &ldquo;NASA&apos;s Astrophysics Division seeks automated AI/ML models to sift through space-based light curves and find exoplanets at scale. Train on open-source Kepler, TESS, and K2 datasets to spot those tiny transit dips—and help humanity discover its next Earth!&rdquo;
+                    </blockquote>
+                  </motion.div>
+                </div>
+              </div>
+            </section>
+
+            {/* Footer */}
+            <Footer />
           </motion.div>
         )}
 
@@ -363,7 +426,7 @@ export default function Home() {
                 <div>
                   <ResultsCard 
                     result={analysisResult}
-                    onVisualizeData={(data) => setShowVisualization(true)}
+                    onVisualizeData={() => setShowVisualization(true)}
                   />
                 </div>
 
@@ -383,13 +446,50 @@ export default function Home() {
 
       {/* Visualization Modal */}
       <AnimatePresence>
-        {showVisualization && analysisResult?.fluxData && (
+        {showVisualization && analysisResult?.annotated_timeseries && (
           <FluxVisualization
-            data={analysisResult.fluxData}
+            data={analysisResult.annotated_timeseries.map(p => p.flux)}
+            highlightedPoints={analysisResult.annotated_timeseries
+              .map((p, i) => p.highlight ? i : -1)
+              .filter(i => i !== -1)}
             onClose={() => setShowVisualization(false)}
           />
         )}
       </AnimatePresence>
+
+      {/* 3D Exoplanet Viewer Modal */}
+      <AnimatePresence>
+        {show3DViewer && (
+          <Exoplanet3DViewer
+            onClose={() => setShow3DViewer(false)}
+            onPlanetSelect={(planet) => {
+              console.log('Selected planet:', planet);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Floating 3D Map Button */}
+      <motion.button
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 2 }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={() => setShow3DViewer(true)}
+        className="fixed bottom-6 right-6 z-40 p-4 rounded-full bg-gradient-to-r from-space-500 to-nebula-500 text-white shadow-2xl hover:from-space-600 hover:to-nebula-600 transition-all duration-300 group"
+        title="Open 3D Exoplanet Map"
+      >
+        <Globe className="w-6 h-6" />
+        <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+          <span className="text-xs text-white font-bold">3D</span>
+        </div>
+        
+        {/* Tooltip */}
+        <div className="absolute bottom-full right-0 mb-2 px-3 py-1 bg-black/80 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+          Explore 3D Universe
+        </div>
+      </motion.button>
     </div>
   );
 }
