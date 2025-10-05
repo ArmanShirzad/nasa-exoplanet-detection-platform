@@ -1,0 +1,15 @@
+== KEPLER SAMPLE EVAL ==
+              precision    recall  f1-score   support
+
+           0      0.973     0.930     0.951       355
+           1      0.845     0.938     0.889       145
+
+    accuracy                          0.932       500
+   macro avg      0.909     0.934     0.920       500
+weighted avg      0.936     0.932     0.933       500
+
+ROC-AUC: 0.9729
+PR-AUC : 0.9382
+Confusion matrix:
+[[330  25]
+ [  9 136]]
