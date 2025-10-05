@@ -1,0 +1,33 @@
+== VAL ==
+precision    recall  f1-score   support
+
+           0      0.876     0.915     0.895      2895
+           1      0.688     0.593     0.637       918
+
+    accuracy                          0.837      3813
+   macro avg      0.782     0.754     0.766      3813
+weighted avg      0.831     0.837     0.833      3813
+ROC-AUC: 0.8708
+PR-AUC : 0.7249
+Confusion matrix [ [TN FP]
+                   [FN TP] ]:
+[[2648  247]
+ [ 374  544]]
+
+
+== TEST ==
+precision    recall  f1-score   support
+
+           0      0.880     0.912     0.896      2894
+           1      0.688     0.609     0.646       919
+
+    accuracy                          0.839      3813
+   macro avg      0.784     0.761     0.771      3813
+weighted avg      0.834     0.839     0.836      3813
+ROC-AUC: 0.8810
+PR-AUC : 0.7114
+Confusion matrix [ [TN FP]
+                   [FN TP] ]:
+[[2640  254]
+ [ 359  560]]
+
