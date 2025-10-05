@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, Hash } from 'lucide-react';
 
@@ -23,9 +23,21 @@ export default function TabularMVPForm({ onSubmit }: { onSubmit: (features: Tabu
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const update = (k: keyof TabularFeaturesInput, v: string) => setFeatures(prev => ({ ...prev, [k]: v }));
+  const isValidNumber = (v: string) => v !== '' && !Number.isNaN(Number(v));
+  const isPositive = (v: string) => Number(v) > 0;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const update = useCallback((k: keyof TabularFeaturesInput, v: string) => {
+    setFeatures(prev => ({ ...prev, [k]: v }));
+  }, []);
+
+  const validateField = useCallback((k: keyof TabularFeaturesInput, v: string) => {
+    let msg = '';
+    if (!isValidNumber(v)) msg = 'Required numeric value';
+    else if (!isPositive(v)) msg = 'Must be > 0';
+    setErrors(prev => ({ ...prev, [k]: msg }));
+  }, []);
+
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     const keys: (keyof TabularFeaturesInput)[] = ['period_days','transit_depth_ppm','planet_radius_re','stellar_radius_rs','snr'];
     const nextErrors: Record<string, string> = {};
@@ -39,27 +51,17 @@ export default function TabularMVPForm({ onSubmit }: { onSubmit: (features: Tabu
     setErrors(nextErrors);
     if (!ok) return;
     onSubmit(features);
-  };
+  }, [features, onSubmit]);
 
-  const isValidNumber = (v: string) => v !== '' && !Number.isNaN(Number(v));
-  const isPositive = (v: string) => Number(v) > 0;
-
-  const validateField = (k: keyof TabularFeaturesInput, v: string) => {
-    let msg = '';
-    if (!isValidNumber(v)) msg = 'Required numeric value';
-    else if (!isPositive(v)) msg = 'Must be > 0';
-    setErrors(prev => ({ ...prev, [k]: msg }));
-  };
-
-  const canSubmit = (() => {
+  const canSubmit = useMemo(() => {
     const keys: (keyof TabularFeaturesInput)[] = ['period_days','transit_depth_ppm','planet_radius_re','stellar_radius_rs','snr'];
     return keys.every(k => {
       const v = String(features[k] ?? '');
       return isValidNumber(v) && isPositive(v) && !(errors[k as string]);
     });
-  })();
+  }, [features, errors]);
 
-  const Input = ({ label, field, unit }: { label: string; field: keyof TabularFeaturesInput; unit?: string }) => (
+  const Input = useCallback(({ label, field, unit }: { label: string; field: keyof TabularFeaturesInput; unit?: string }) => (
     <div className="space-y-2">
       <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
         <Hash className="w-4 h-4 text-space-400" />
@@ -69,14 +71,14 @@ export default function TabularMVPForm({ onSubmit }: { onSubmit: (features: Tabu
       <input
         type="number"
         value={features[field]}
-        onChange={(e) => { update(field, e.target.value); validateField(field, e.target.value); }}
+        onChange={(e) => { update(field, e.target.value); }}
         onBlur={(e) => { validateField(field, e.target.value); }}
         placeholder="e.g., 10.5"
         className={`w-full px-4 py-3 bg-white/5 border rounded-lg focus:ring-2 focus:ring-space-400/20 transition-all duration-200 text-white placeholder-gray-400 backdrop-blur-sm ${errors[field] ? 'border-red-400 focus:border-red-400' : 'border-gray-600 focus:border-space-400'}`}
       />
       {errors[field] && <p className="text-xs text-red-400">{errors[field]}</p>}
     </div>
-  );
+  ), [features, errors, update, validateField]);
 
   return (
     <motion.form
