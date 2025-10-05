@@ -19,12 +19,14 @@ interface FileUploadProps {
   onFileSelect: (file: File, parsedData?: ParsedData) => void;
   acceptedTypes?: string[];
   maxSize?: number; // in MB
+  hideSampleButton?: boolean;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
   onFileSelect,
   acceptedTypes = ['.csv', '.json'],
-  maxSize = 10
+  maxSize = 10,
+  hideSampleButton = false
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -305,13 +307,15 @@ const FileUpload: React.FC<FileUploadProps> = ({
                   <File className="w-4 h-4" />
                   <span>Supports: {acceptedTypes.join(', ')} (max {maxSize}MB)</span>
                 </div>
-                <button
-                  onClick={loadSampleData}
-                  className="inline-flex items-center gap-2 px-3 py-1 text-xs bg-space-500/20 hover:bg-space-500/30 text-space-400 rounded-lg transition-colors"
-                >
-                  <Download className="w-3 h-3" />
-                  Load Sample TESS Data
-                </button>
+                {!hideSampleButton && (
+                  <button
+                    onClick={loadSampleData}
+                    className="inline-flex items-center gap-2 px-3 py-1 text-xs bg-space-500/20 hover:bg-space-500/30 text-space-400 rounded-lg transition-colors"
+                  >
+                    <Download className="w-3 h-3" />
+                    Load Sample TESS Data
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>

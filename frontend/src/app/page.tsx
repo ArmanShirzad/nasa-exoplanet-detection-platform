@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import FileUpload from '@/components/forms/FileUpload';
+import TabbedUpload from '@/components/ui/TabbedUpload';
 import ManualInputForm from '@/components/forms/ManualInputForm';
 import ChatInterface from '@/components/ui/ChatInterface';
 import ResultsCard from '@/components/results/ResultsCard';
@@ -262,7 +263,7 @@ export default function Home() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -20 }}
                         >
-                          <FileUpload onFileSelect={handleFileUpload} />
+                          <TabbedUpload onFileSelect={handleFileUpload} />
                         </motion.div>
                       ) : (
                         <motion.div

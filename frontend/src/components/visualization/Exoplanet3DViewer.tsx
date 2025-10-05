@@ -256,6 +256,7 @@ export default function Exoplanet3DViewer({ onClose, selectedPlanet, onPlanetSel
   const [selectedPlanetData, setSelectedPlanetData] = useState<ExoplanetData | null>(selectedPlanet || null);
   const [autoRotate, setAutoRotate] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
+  const [resetKey, setResetKey] = useState(0);
   
   const handlePlanetSelect = (planet: ExoplanetData) => {
     setSelectedPlanetData(planet);
@@ -263,8 +264,11 @@ export default function Exoplanet3DViewer({ onClose, selectedPlanet, onPlanetSel
   };
   
   const resetView = () => {
-    // Reset camera position
+    // Reset local UI state and remount Canvas content to initial state
+    setSelectedPlanetData(null);
     setAutoRotate(true);
+    setShowLabels(true);
+    setResetKey((k) => k + 1);
   };
   
   return (
@@ -355,7 +359,7 @@ export default function Exoplanet3DViewer({ onClose, selectedPlanet, onPlanetSel
               {/* Exoplanets */}
               {sampleExoplanets.map((planet) => (
                 <Exoplanet 
-                  key={planet.id} 
+                  key={`${resetKey}-${planet.id}`} 
                   data={planet} 
                   onSelect={handlePlanetSelect}
                 />

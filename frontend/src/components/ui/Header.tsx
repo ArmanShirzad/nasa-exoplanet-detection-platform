@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Globe, Star, Menu, X, Github, Twitter, ExternalLink, Map } from 'lucide-react';
+import { Globe, Star, Menu, X, Github, Instagram, ExternalLink, Map } from 'lucide-react';
 
 interface HeaderProps {
   onOpen3DViewer?: () => void;
@@ -20,7 +20,7 @@ export default function Header({ onOpen3DViewer }: HeaderProps) {
 
   const socialLinks = [
     { name: 'GitHub', icon: Github, href: 'https://github.com/nasa-spaceapps' },
-    { name: 'Twitter', icon: Twitter, href: 'https://twitter.com/nasa' },
+    { name: 'Instagram', icon: Instagram, href: 'https://instagram.com/armana.team' },
     { name: 'NASA', icon: ExternalLink, href: 'https://www.nasa.gov' },
   ];
 

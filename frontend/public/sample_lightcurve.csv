@@ -1,0 +1,4 @@
+time,flux,flux_err,quality,object_id,mission
+0.0,1.0000,0.001,0,TIC00000001,TESS
+0.1,0.9985,0.001,0,TIC00000001,TESS
+0.2,0.9970,0.001,0,TIC00000001,TESS

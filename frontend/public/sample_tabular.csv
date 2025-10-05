@@ -1,0 +1,2 @@
+mission,object_id,z_period_days,z_transit_depth_ppm,z_planet_radius_re,z_stellar_radius_rs,z_snr,mission_K2,mission_KEPLER,mission_TESS
+TESS,TIC00000001,0.12,-0.45,0.3,0.1,0.25,0,0,1
