@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Globe, Star, Heart, Github, Twitter, ExternalLink, Mail } from 'lucide-react';
+import { Globe, Star, Heart, Github, Instagram, ExternalLink, Mail } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -29,9 +29,9 @@ export default function Footer() {
   };
 
   const socialLinks = [
-    { name: 'GitHub', icon: Github, href: 'https://github.com/nasa-spaceapps', color: 'hover:text-gray-300' },
-    { name: 'Twitter', icon: Twitter, href: 'https://twitter.com/nasa', color: 'hover:text-blue-400' },
-    { name: 'NASA', icon: ExternalLink, href: 'https://www.nasa.gov', color: 'hover:text-red-400' },
+    { name: 'GitHub', icon: Github, href: 'https://gitlab.com/armana-team/nasa-exoplanet-2025/', color: 'hover:text-gray-300' },
+    { name: 'Instagram', icon: Instagram, href: 'https://instagram.com/armana.team', color: 'hover:text-pink-400' },
+    { name: 'Team', icon: ExternalLink, href: 'https://teamarmana-nasaspaceapp2025.vercel.app/', color: 'hover:text-red-400' },
     { name: 'Contact', icon: Mail, href: 'mailto:spaceapps@nasa.gov', color: 'hover:text-green-400' },
   ];
 
@@ -105,10 +105,10 @@ export default function Footer() {
             </div>
             
             <div className="flex items-center gap-6 text-sm">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="/privacy" className="text-gray-400 hover:text-white transition-colors">
                 Privacy Policy
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="/terms" className="text-gray-400 hover:text-white transition-colors">
                 Terms of Service
               </a>
               <a href="#" className="text-gray-400 hover:text-white transition-colors">

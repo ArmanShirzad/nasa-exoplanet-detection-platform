@@ -14,14 +14,13 @@ export default function Header({ onOpen3DViewer }: HeaderProps) {
   const navigation = [
     { name: 'Home', href: '#home' },
     { name: 'Meet the Data', href: '#data' },
-    { name: 'Analysis', href: '#analysis' },
     { name: 'About', href: '#about' },
   ];
 
   const socialLinks = [
     { name: 'GitHub', icon: Github, href: 'https://gitlab.com/armana-team/nasa-exoplanet-2025/' },
     { name: 'Instagram', icon: Instagram, href: 'https://instagram.com/armana.team' },
-    { name: 'NASA', icon: ExternalLink, href: 'https://www.nasa.gov' },
+    { name: 'Team', icon: ExternalLink, href: 'https://teamarmana-nasaspaceapp2025.vercel.app/' },
   ];
 
   return (

@@ -342,7 +342,11 @@ export default function Home() {
                       About the Team
                     </h3>
                     <blockquote className="text-gray-300 leading-relaxed italic">
-                      &ldquo;I&apos;m a passionate geek at heart—my friends call me a nerd :D. Technology and AI are unlocking a brighter future for science. If solving cosmic mysteries resonates with you, join me and let&apos;s build that future together!&rdquo;
+                      <p className="mb-4">We are the Aramana Team, a diverse group of scientists, engineers, and dreamers brought together by curiosity and code. Based at BTU Cottbus-Senftenberg in Germany, we believe in open source, collaborative exploration, and pushing the boundaries of what AI can do for space science.</p>
+                      <p className="mb-4">
+                        Learn more about us at: <a href="https://teamarmana-nasaspaceapp2025.vercel.app/" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">teamarmana-nasaspaceapp2025.vercel.app</a>
+                      </p>
+                      <p>If you love turning data into discovery, come join us on this cosmic journey.</p>
                     </blockquote>
                   </motion.div>
 
@@ -361,7 +365,7 @@ export default function Home() {
                       About the Challenge
                     </h3>
                     <blockquote className="text-gray-300 leading-relaxed italic">
-                      &ldquo;NASA&apos;s Astrophysics Division seeks automated AI/ML models to sift through space-based light curves and find exoplanets at scale. Train on open-source Kepler, TESS, and K2 datasets to spot those tiny transit dips—and help humanity discover its next Earth!&rdquo;
+                      <p>Aramana Team aims to harness the power of AI/ML to sift through NASA’s publicly available exoplanet datasets and automatically detect exoplanets at scale. We train on data from missions like Kepler, TESS, and K2, and large set of open source light  curve data of  Nasa automating what is today a largely manual process spotting those subtle transit dips and helping humanity find its next Earth.</p>
                     </blockquote>
                   </motion.div>
                 </div>
