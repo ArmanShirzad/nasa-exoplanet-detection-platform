@@ -19,7 +19,7 @@ export default function Header({ onOpen3DViewer }: HeaderProps) {
   ];
 
   const socialLinks = [
-    { name: 'GitHub', icon: Github, href: 'https://github.com/nasa-spaceapps' },
+    { name: 'GitHub', icon: Github, href: 'https://gitlab.com/armana-team/nasa-exoplanet-2025/' },
     { name: 'Instagram', icon: Instagram, href: 'https://instagram.com/armana.team' },
     { name: 'NASA', icon: ExternalLink, href: 'https://www.nasa.gov' },
   ];
