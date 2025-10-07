@@ -1,11 +1,22 @@
 {
   "version": 2,
-  "builds": [{ "src": "frontend/package.json", "use": "@vercel/next" }],
-  "rewrites": [
-    { "source": "/api/tabular/predict", "destination": "https://nasa-exoplanet-2025.onrender.com/v1/tabular/predict" },
-    { "source": "/api/lightcurve/analyze", "destination": "https://nasa-exoplanet-2025.onrender.com/v1/lightcurve/analyze" }
+  "builds": [
+    { "src": "frontend/package.json", "use": "@vercel/next" }
   ],
-  "routes": [{ "src": "/(.*)", "dest": "frontend/$1" }],
+  "rewrites": [
+    {
+      "source": "/api/tabular/predict",
+      "destination": "https://nasa-exoplanet-2025.onrender.com/v1/tabular/predict"
+    },
+    {
+      "source": "/api/lightcurve/analyze",
+      "destination": "https://nasa-exoplanet-2025.onrender.com/v1/lightcurve/analyze"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/frontend/$1"
+    }
+  ],
   "env": {
     "NEXT_PUBLIC_BACKEND_URL": "https://nasa-exoplanet-2025.onrender.com/v1"
   }
