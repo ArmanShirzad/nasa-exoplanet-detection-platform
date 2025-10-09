@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, 
@@ -169,7 +169,7 @@ export default function Home() {
     }
   };
 
-  const handleChatMessage = async (message: string) => {
+  const handleChatMessage = useCallback(async (message: string) => {
     // Check if limit reached
     if (messageCount >= 3 || chatLimitReached) {
       const limitMessage: Message = {
@@ -265,7 +265,7 @@ export default function Home() {
       
       setMessages(prev => [...prev, errorMessage]);
     }
-  };
+  }, [messageCount, chatLimitReached, analysisResult, lastSubmittedFeatures, sessionId]);
 
   const handleNavigateToSection = (section: string) => {
     // First go to landing page if not already there
