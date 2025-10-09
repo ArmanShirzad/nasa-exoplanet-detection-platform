@@ -54,8 +54,81 @@ class ChatResponse(BaseModel):
     limit_reached: bool
 
 
+def validate_user_input(message: str) -> bool:
+    """Validate user input to prevent probing questions about system internals."""
+    
+    # List of probing patterns to block
+    probing_patterns = [
+        # Technical probing
+        "what model", "what algorithm", "how does the model", "model architecture",
+        "what technology", "what framework", "what library", "what api",
+        
+        # System probing
+        "how is this built", "what's the backend", "what's the frontend",
+        "what database", "what server", "what infrastructure",
+        
+        # Implementation probing
+        "show me the code", "what's the source code", "how is this implemented",
+        "what files", "what directories", "what endpoints",
+        
+        # Data probing
+        "what training data", "what dataset", "how was this trained",
+        "what parameters", "what hyperparameters", "what features",
+        
+        # Security probing
+        "what's the api key", "what credentials", "what tokens",
+        "what environment", "what configuration", "what secrets"
+    ]
+    
+    message_lower = message.lower()
+    
+    # Check for probing patterns
+    for pattern in probing_patterns:
+        if pattern in message_lower:
+            return False
+    
+    return True
+
+
+def filter_sensitive_content(response: str) -> str:
+    """Filter out any potentially sensitive information from AI responses."""
+    
+    # List of sensitive terms that should be blocked
+    sensitive_terms = [
+        # Technical implementation
+        "random forest", "rf_baseline", "joblib", "sklearn", "scikit-learn",
+        "predict_proba", "imputer", "scaler", "feature_importances",
+        
+        # Codebase structure
+        "backend", "frontend", "src/", "app/", "routers/", "main.py",
+        "tabular.py", "chat.py", "requirements.txt", "pyproject.toml",
+        
+        # API/System details
+        "fastapi", "uvicorn", "localhost:8000", "/v1/", "endpoint",
+        "api key", "groq", "llama", "model", "training", "artifacts",
+        
+        # File paths and technical details
+        "ML/Data Pipeline", "artifacts/", ".joblib", ".csv", ".parquet",
+        "unified_raw", "kepler", "tess", "k2", "mission",
+        
+        # Internal processes
+        "database", "sql", "postgres", "mysql", "mongo", "redis",
+        "docker", "kubernetes", "aws", "azure", "gcp", "deployment"
+    ]
+    
+    # Convert to lowercase for case-insensitive matching
+    response_lower = response.lower()
+    
+    # Check for sensitive terms
+    for term in sensitive_terms:
+        if term in response_lower:
+            return "I can only explain the analysis results. For technical questions, please contact NASA support."
+    
+    return response
+
+
 def create_system_prompt(context: ChatContext) -> str:
-    """Create a strict system prompt with guardrails."""
+    """Create a strict system prompt with security guardrails."""
     
     # Format feature list
     feature_list = []
@@ -76,13 +149,21 @@ CONTEXT:
 - Explanation: {context.explanation}
 - User Input Values: {input_values_str}
 
-RULES:
+STRICT SECURITY RULES:
 1. ONLY answer questions about THIS specific analysis result
 2. ONLY discuss exoplanet detection, transit method, and the features shown
-3. If asked about unrelated topics (politics, general science, other planets, etc.), respond: "I can only answer questions about this specific exoplanet analysis result. Please ask about the detection confidence, feature importance, or the transit method used."
-4. Keep responses under 150 words
-5. Be educational but concise
-6. Use the context data to provide specific answers
+3. NEVER reveal information about:
+   - Model architecture, algorithms, or implementation details
+   - Codebase structure, file names, or technical infrastructure
+   - Training data, model parameters, or technical specifications
+   - API endpoints, system architecture, or deployment details
+   - Any internal NASA systems, databases, or technical processes
+4. If asked about technical implementation, respond: "I can only explain the analysis results. For technical questions, please contact NASA support."
+5. If asked about unrelated topics, respond: "I can only answer questions about this specific exoplanet analysis result. Please ask about the detection confidence, feature importance, or the transit method used."
+6. Keep responses under 150 words
+7. Be educational but concise
+8. Use ONLY the context data provided to answer questions
+9. NEVER speculate about technical implementation or system details
 
 User question: {{user_message}}"""
     
@@ -92,6 +173,14 @@ User question: {{user_message}}"""
 @router.post("/ask", response_model=ChatResponse)
 def ask_chat(req: ChatRequest) -> ChatResponse:
     """Handle chat requests with 3-message limit per session."""
+    
+    # Validate user input for security
+    if not validate_user_input(req.message):
+        return ChatResponse(
+            response="I can only explain the analysis results. For technical questions, please contact NASA support.",
+            remaining_messages=req.session_id in session_message_counts and session_message_counts[req.session_id] or 0,
+            limit_reached=False
+        )
     
     # Check if Groq client is available
     if not groq_client:
@@ -134,12 +223,15 @@ def ask_chat(req: ChatRequest) -> ChatResponse:
         # Extract response
         ai_response = chat_completion.choices[0].message.content
         
+        # Apply security filtering
+        filtered_response = filter_sensitive_content(ai_response)
+        
         # Update session count
         session_message_counts[req.session_id] = current_count + 1
         remaining = 3 - (current_count + 1)
         
         return ChatResponse(
-            response=ai_response,
+            response=filtered_response,
             remaining_messages=remaining,
             limit_reached=remaining == 0
         )

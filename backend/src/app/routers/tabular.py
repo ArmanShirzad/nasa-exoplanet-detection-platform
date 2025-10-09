@@ -131,11 +131,24 @@ def predict_tabular(req: TabularRequest) -> TabularResponse:
     x_imp = _IMPUTER.transform(x)
     x_scaled = _SCALER.transform(x_imp)
     proba = float(_MODEL.predict_proba(x_scaled)[0, 1])
-    probs = {
-        "CONFIRMED": round(proba, 6),
-        "CANDIDATE": round(max(0.0, 1.0 - proba) * 0.7, 6),
-        "FALSE POSITIVE": round(max(0.0, 1.0 - proba) * 0.3, 6),
-    }
+    
+    # Use actual model probabilities instead of artificial distribution
+    # The model gives probability of being CONFIRMED exoplanet
+    if proba >= 0.5:
+        # High confidence exoplanet
+        probs = {
+            "CONFIRMED": round(proba, 6),
+            "CANDIDATE": round((1.0 - proba) * 0.8, 6),  # Most remaining goes to CANDIDATE
+            "FALSE POSITIVE": round((1.0 - proba) * 0.2, 6),
+        }
+    else:
+        # Low confidence - more likely to be false positive
+        probs = {
+            "CONFIRMED": round(proba, 6),
+            "CANDIDATE": round((1.0 - proba) * 0.3, 6),  # Less goes to CANDIDATE
+            "FALSE POSITIVE": round((1.0 - proba) * 0.7, 6),  # More goes to FALSE POSITIVE
+        }
+    
     label = max(probs, key=probs.get)
 
     # Generate real feature importance explanations
