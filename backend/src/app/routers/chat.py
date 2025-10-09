@@ -1,12 +1,20 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import os
-from groq import Groq
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Optional imports for Groq (will be available after pip install)
+try:
+    from groq import Groq
+    from dotenv import load_dotenv
+    GROQ_AVAILABLE = True
+except ImportError:
+    GROQ_AVAILABLE = False
+    print("Warning: groq and python-dotenv packages not installed. Chat functionality will be limited.")
+
+# Load environment variables if available
+if GROQ_AVAILABLE:
+    load_dotenv()
 
 router = APIRouter()
 
@@ -15,20 +23,23 @@ session_message_counts: Dict[str, int] = {}
 
 # Initialize Groq client
 groq_client = None
-try:
-    api_key = os.getenv("GROQ_API_KEY")
-    if api_key and api_key != "your_groq_api_key_here":
-        groq_client = Groq(api_key=api_key)
-except Exception as e:
-    print(f"Warning: Groq client initialization failed: {e}")
+if GROQ_AVAILABLE:
+    try:
+        api_key = os.getenv("GROQ_API_KEY")
+        if api_key and api_key != "your_groq_api_key_here":
+            groq_client = Groq(api_key=api_key)
+    except Exception as e:
+        print(f"Warning: Groq client initialization failed: {e}")
+else:
+    print("Groq packages not available - chat will return mock responses")
 
 
 class ChatContext(BaseModel):
     verdict: str
     confidence: int
-    features: List[Dict[str, any]]
+    features: List[Dict[str, Any]]
     explanation: str
-    input_values: Dict[str, any]
+    input_values: Dict[str, Any]
 
 
 class ChatRequest(BaseModel):
