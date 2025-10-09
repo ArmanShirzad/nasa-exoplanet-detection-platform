@@ -216,7 +216,10 @@ export default function Home() {
       </div>
 
       {/* Header */}
-      <Header onOpen3DViewer={() => setShow3DViewer(true)} />
+      <Header 
+        onOpen3DViewer={() => setShow3DViewer(true)}
+        onNavigateHome={() => setAppState('landing')}
+      />
 
       <div className="relative z-10 pt-16">
         {appState === 'landing' && (
@@ -268,29 +271,11 @@ export default function Home() {
                 </motion.div>
 
                 {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <div className="flex justify-center">
                   <motion.button
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => startAnalysis({})}
-                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cosmic-500 to-pink-500 
-                             text-white font-semibold text-lg rounded-xl shadow-lg
-                             hover:from-cosmic-600 hover:to-pink-600
-                             focus:ring-4 focus:ring-cosmic-400/20
-                             transition-all duration-200"
-                  >
-                    <Sparkles className="w-6 h-6" />
-                    Analyze with AI
-                    <ArrowRight className="w-5 h-5" />
-                  </motion.button>
-                  
-                  <motion.button
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.7 }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShow3DViewer(true)}
