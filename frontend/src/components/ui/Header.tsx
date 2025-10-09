@@ -7,15 +7,16 @@ import { Globe, Star, Menu, X, Github, Instagram, ExternalLink, Map } from 'luci
 interface HeaderProps {
   onOpen3DViewer?: () => void;
   onNavigateHome?: () => void;
+  onNavigateToSection?: (section: string) => void;
 }
 
-export default function Header({ onOpen3DViewer, onNavigateHome }: HeaderProps) {
+export default function Header({ onOpen3DViewer, onNavigateHome, onNavigateToSection }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navigation = [
     { name: 'Home', href: '#home', onClick: onNavigateHome },
-    { name: 'Meet the Data', href: '#data', onClick: onNavigateHome },
-    { name: 'About', href: '#about', onClick: onNavigateHome },
+    { name: 'Meet the Data', href: '#data', onClick: () => onNavigateToSection?.('data') },
+    { name: 'About', href: '#about', onClick: () => onNavigateToSection?.('about') },
   ];
 
   const socialLinks = [
@@ -35,6 +36,7 @@ export default function Header({ onOpen3DViewer, onNavigateHome }: HeaderProps) 
           {/* Logo */}
           <motion.div
             whileHover={{ scale: 1.05 }}
+            onClick={onNavigateHome}
             className="flex items-center gap-3 cursor-pointer"
           >
             <div className="w-10 h-10 rounded-full bg-gradient-to-r from-space-500 to-nebula-500 flex items-center justify-center">

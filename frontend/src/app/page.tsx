@@ -180,6 +180,34 @@ export default function Home() {
     }, 1500);
   };
 
+  const handleNavigateToSection = (section: string) => {
+    // First go to landing page if not already there
+    if (appState !== 'landing') {
+      setAppState('landing');
+      // Wait for the landing page to render, then scroll to section
+      setTimeout(() => {
+        const element = document.getElementById(section);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    } else {
+      // Already on landing page, just scroll to section
+      const element = document.getElementById(section);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  const handleNavigateHome = () => {
+    // Go to landing page and scroll to top
+    setAppState('landing');
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+  };
+
   const resetApp = () => {
     setAppState('landing');
     setAnalysisResult(null);
@@ -218,7 +246,8 @@ export default function Home() {
       {/* Header */}
       <Header 
         onOpen3DViewer={() => setShow3DViewer(true)}
-        onNavigateHome={() => setAppState('landing')}
+        onNavigateHome={handleNavigateHome}
+        onNavigateToSection={handleNavigateToSection}
       />
 
       <div className="relative z-10 pt-16">
