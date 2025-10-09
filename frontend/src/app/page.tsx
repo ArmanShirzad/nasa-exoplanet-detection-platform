@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, 
@@ -55,6 +55,17 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [showVisualization, setShowVisualization] = useState(false);
   const [show3DViewer, setShow3DViewer] = useState(false);
+  
+  // Chat session management
+  const [sessionId, setSessionId] = useState<string>('');
+  const [messageCount, setMessageCount] = useState(0);
+  const [chatLimitReached, setChatLimitReached] = useState(false);
+  const [lastSubmittedFeatures, setLastSubmittedFeatures] = useState<TabularFeaturesInput | null>(null);
+
+  // Generate session ID on mount
+  useEffect(() => {
+    setSessionId(crypto.randomUUID());
+  }, []);
 
   const handleManualSubmit = (data: unknown) => {
     console.log('Manual data submitted:', data);
@@ -64,6 +75,7 @@ export default function Home() {
   const submitTabularMVP = async (features: TabularFeaturesInput) => {
     setIsAnalyzing(true);
     setAppState('analyzing');
+    setLastSubmittedFeatures(features); // Store features for chat context
     try {
       const resp = await fetch('/api/tabular/predict', {
         method: 'POST',
@@ -157,7 +169,19 @@ export default function Home() {
     }
   };
 
-  const handleChatMessage = (message: string) => {
+  const handleChatMessage = async (message: string) => {
+    // Check if limit reached
+    if (messageCount >= 3 || chatLimitReached) {
+      const limitMessage: Message = {
+        id: Date.now().toString(),
+        type: 'ai',
+        content: "You've reached the 3-message limit for this session. Please contact us for enterprise services for more AI answers.",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, limitMessage]);
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
@@ -167,17 +191,80 @@ export default function Home() {
     
     setMessages(prev => [...prev, userMessage]);
 
-    // Simulate AI response
-    setTimeout(() => {
+    // Add typing indicator
+    const typingMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      type: 'ai',
+      content: '',
+      timestamp: new Date(),
+      isTyping: true
+    };
+    setMessages(prev => [...prev, typingMessage]);
+
+    try {
+      // Prepare context for chat API
+      if (!analysisResult || !lastSubmittedFeatures) {
+        throw new Error('No analysis result available');
+      }
+
+      const context = {
+        verdict: analysisResult.verdict,
+        confidence: analysisResult.confidence,
+        features: analysisResult.feature_importances,
+        explanation: analysisResult.explanation,
+        input_values: lastSubmittedFeatures
+      };
+
+      const response = await fetch('/api/chat/ask', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          message: message,
+          context: context
+        }),
+      });
+
+      // Remove typing indicator
+      setMessages(prev => prev.filter(msg => !msg.isTyping));
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to get AI response');
+      }
+
+      const data = await response.json();
+      
+      // Update message count and limit status
+      setMessageCount(prev => prev + 1);
+      setChatLimitReached(data.limit_reached);
+
       const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: (Date.now() + 2).toString(),
         type: 'ai',
-        content: "I'd be happy to help explain the analysis results. The detection algorithm uses advanced machine learning techniques to identify exoplanet signatures in the flux data. Would you like me to elaborate on any specific aspect?",
+        content: data.response,
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, aiMessage]);
-    }, 1500);
+
+    } catch (error) {
+      console.error('Chat error:', error);
+      
+      // Remove typing indicator
+      setMessages(prev => prev.filter(msg => !msg.isTyping));
+      
+      const errorMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        type: 'ai',
+        content: 'Unable to reach AI assistant. Please try again.',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    }
   };
 
   const handleNavigateToSection = (section: string) => {
@@ -213,6 +300,12 @@ export default function Home() {
     setAnalysisResult(null);
     setMessages([]);
     setIsAnalyzing(false);
+    // Reset chat state
+    setMessageCount(0);
+    setChatLimitReached(false);
+    setLastSubmittedFeatures(null);
+    // Generate new session ID
+    setSessionId(crypto.randomUUID());
   };
 
   return (
@@ -443,6 +536,8 @@ export default function Home() {
                     onSendMessage={handleChatMessage}
                     messages={messages}
                     isLoading={isAnalyzing}
+                    remainingMessages={3 - messageCount}
+                    limitReached={chatLimitReached}
                   />
                 </div>
               </div>

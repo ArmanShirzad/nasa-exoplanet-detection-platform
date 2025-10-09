@@ -16,12 +16,16 @@ interface ChatInterfaceProps {
   onSendMessage: (message: string) => void;
   messages: Message[];
   isLoading?: boolean;
+  remainingMessages?: number;
+  limitReached?: boolean;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSendMessage,
   messages,
-  isLoading = false
+  isLoading = false,
+  remainingMessages = 3,
+  limitReached = false
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
@@ -114,7 +118,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <div>
               <h3 className="font-semibold text-white">NASA AI Assistant</h3>
               <p className="text-xs text-gray-400">
-                {messages.length === 0 ? 'Ask me about exoplanet detection' : 'Analyzing your results'}
+                {limitReached 
+                  ? 'Limit reached - Contact for enterprise services' 
+                  : messages.length === 0 
+                    ? 'Ask me about exoplanet detection' 
+                    : `${remainingMessages}/3 questions remaining`
+                }
               </p>
             </div>
           </div>
@@ -205,42 +214,55 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
             {/* Input */}
             <div className="p-4 border-t border-white/10">
-              <form onSubmit={handleSubmit} className="flex gap-3">
-                <div className="flex-1 relative">
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Ask about the analysis results..."
-                    className="w-full px-4 py-3 bg-white/5 border border-gray-600 rounded-lg 
-                             focus:border-space-400 focus:ring-2 focus:ring-space-400/20 
-                             transition-all duration-200 text-white placeholder-gray-400
-                             backdrop-blur-sm"
-                    disabled={isLoading}
-                  />
+              {limitReached ? (
+                <div className="text-center py-4">
+                  <div className="px-4 py-3 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-400/30 rounded-lg">
+                    <p className="text-red-300 text-sm font-medium mb-2">
+                      You've reached the 3-message limit for this session.
+                    </p>
+                    <p className="text-gray-400 text-xs">
+                      Please contact us for enterprise services for more AI answers.
+                    </p>
+                  </div>
                 </div>
-                <motion.button
-                  type="submit"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  disabled={!inputValue.trim() || isLoading}
-                  className="px-4 py-3 bg-gradient-to-r from-space-500 to-nebula-500 
-                           text-white rounded-lg shadow-lg
-                           hover:from-space-600 hover:to-nebula-600
-                           focus:ring-4 focus:ring-space-400/20
-                           transition-all duration-200
-                           disabled:opacity-50 disabled:cursor-not-allowed
-                           flex items-center justify-center"
-                >
-                  {isLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Send className="w-5 h-5" />
-                  )}
-                </motion.button>
-              </form>
+              ) : (
+                <form onSubmit={handleSubmit} className="flex gap-3">
+                  <div className="flex-1 relative">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Ask about the analysis results..."
+                      className="w-full px-4 py-3 bg-white/5 border border-gray-600 rounded-lg 
+                               focus:border-space-400 focus:ring-2 focus:ring-space-400/20 
+                               transition-all duration-200 text-white placeholder-gray-400
+                               backdrop-blur-sm"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <motion.button
+                    type="submit"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    disabled={!inputValue.trim() || isLoading}
+                    className="px-4 py-3 bg-gradient-to-r from-space-500 to-nebula-500 
+                             text-white rounded-lg shadow-lg
+                             hover:from-space-600 hover:to-nebula-600
+                             focus:ring-4 focus:ring-space-400/20
+                             transition-all duration-200
+                             disabled:opacity-50 disabled:cursor-not-allowed
+                             flex items-center justify-center"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Send className="w-5 h-5" />
+                    )}
+                  </motion.button>
+                </form>
+              )}
             </div>
           </motion.div>
         )}
