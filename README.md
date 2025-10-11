@@ -414,7 +414,7 @@ This project is developed for **NASA Space Apps Challenge 2025**. Please refer t
 
 - **Issues**: [GitHub Issues](https://github.com/your-username/nasa-exoplanet-2025/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/your-username/nasa-exoplanet-2025/discussions)
-- **Email**: your-email@example.com
+- **Email**: armanshirzad1998@gmail.com
 
 ---
 
