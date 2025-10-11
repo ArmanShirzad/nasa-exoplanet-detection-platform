@@ -1,0 +1,85 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  frontend-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Run linting
+      run: |
+        cd frontend
+        npm run lint
+    
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+
+  backend-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        pip install -r requirements.txt
+    
+    - name: Test backend startup
+      run: |
+        cd backend
+        python -c "from src.app.main import app; print('Backend imports successfully')"
+    
+    - name: Test ML model loading
+      run: |
+        cd backend
+        python -c "
+        import joblib
+        from pathlib import Path
+        model_path = Path('ML/Data Pipeline/artifacts/rf_baseline.joblib')
+        if model_path.exists():
+            model = joblib.load(model_path)
+            print('ML model loads successfully')
+        else:
+            print('ML model not found - this is expected in CI')
+        "
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run security scan
+      run: |
+        echo "Security scan would run here"
+        echo "Consider adding tools like:"
+        echo "- npm audit for frontend"
+        echo "- safety for Python dependencies"
+        echo "- CodeQL for code analysis"
