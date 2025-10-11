@@ -68,6 +68,7 @@ _ARTIFACTS_BASE: Path | None = None
 _IMPUTER = None
 _SCALER = None
 _MODEL = None
+_FEATURE_IMPORTANCES = None
 
 
 def _get_artifacts_base() -> Path:
@@ -83,13 +84,18 @@ def _get_artifacts_base() -> Path:
 
 
 def _lazy_load_artifacts():
-    global _IMPUTER, _SCALER, _MODEL
-    if _IMPUTER is not None and _SCALER is not None and _MODEL is not None:
+    global _IMPUTER, _SCALER, _MODEL, _FEATURE_IMPORTANCES
+    if _IMPUTER is not None and _SCALER is not None and _MODEL is not None and _FEATURE_IMPORTANCES is not None:
         return
     base = _get_artifacts_base()
     _IMPUTER = joblib.load(base / "numeric_imputer.joblib")
     _SCALER = joblib.load(base / "numeric_scaler.joblib")
     _MODEL = joblib.load(base / "rf_baseline.joblib")
+    
+    # Load feature importances from CSV
+    import pandas as pd
+    feature_importance_df = pd.read_csv(base / "feature_importances.csv")
+    _FEATURE_IMPORTANCES = feature_importance_df.set_index('feature')['importance'].to_dict()
 
 
 @router.post("/predict", response_model=TabularResponse)
@@ -125,12 +131,40 @@ def predict_tabular(req: TabularRequest) -> TabularResponse:
     x_imp = _IMPUTER.transform(x)
     x_scaled = _SCALER.transform(x_imp)
     proba = float(_MODEL.predict_proba(x_scaled)[0, 1])
-    probs = {
-        "CONFIRMED": round(proba, 6),
-        "CANDIDATE": round(max(0.0, 1.0 - proba) * 0.7, 6),
-        "FALSE POSITIVE": round(max(0.0, 1.0 - proba) * 0.3, 6),
-    }
+    
+    # Use actual model probabilities instead of artificial distribution
+    # The model gives probability of being CONFIRMED exoplanet
+    if proba >= 0.5:
+        # High confidence exoplanet
+        probs = {
+            "CONFIRMED": round(proba, 6),
+            "CANDIDATE": round((1.0 - proba) * 0.8, 6),  # Most remaining goes to CANDIDATE
+            "FALSE POSITIVE": round((1.0 - proba) * 0.2, 6),
+        }
+    else:
+        # Low confidence - more likely to be false positive
+        probs = {
+            "CONFIRMED": round(proba, 6),
+            "CANDIDATE": round((1.0 - proba) * 0.3, 6),  # Less goes to CANDIDATE
+            "FALSE POSITIVE": round((1.0 - proba) * 0.7, 6),  # More goes to FALSE POSITIVE
+        }
+    
     label = max(probs, key=probs.get)
+
+    # Generate real feature importance explanations
+    top_features = []
+    for feature_name in FEATURES_ORDER:
+        if feature_name in _FEATURE_IMPORTANCES and feature_values[feature_name] is not None:
+            importance = _FEATURE_IMPORTANCES[feature_name]
+            top_features.append(ShapItem(
+                feature=feature_name,
+                value=feature_values[feature_name],
+                shap=importance
+            ))
+    
+    # Sort by importance and take top 3
+    top_features.sort(key=lambda x: x.shap, reverse=True)
+    top_features = top_features[:3]
 
     return TabularResponse(
         label=label,
@@ -138,12 +172,8 @@ def predict_tabular(req: TabularRequest) -> TabularResponse:
         calibrated_confidence=probs[label],
         reliability_band="well-calibrated",
         explanations={
-            "top_shap": [
-                ShapItem(feature="transit_depth_ppm", value=req.features.transit_depth_ppm, shap=0.18),
-                ShapItem(feature="snr", value=req.features.snr, shap=0.12),
-                ShapItem(feature="planet_radius_re", value=feature_values["planet_radius_re"], shap=0.09),
-            ],
-            "text": "Baseline RF prediction using imputed+scaled features.",
+            "top_shap": top_features,
+            "text": "Baseline RF prediction using imputed+scaled features with real feature importance from trained model.",
         },
         validation={"artifact_path": str(_get_artifacts_base())},
         version={

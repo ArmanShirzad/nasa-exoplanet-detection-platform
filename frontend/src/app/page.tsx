@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, 
@@ -55,6 +55,17 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [showVisualization, setShowVisualization] = useState(false);
   const [show3DViewer, setShow3DViewer] = useState(false);
+  
+  // Chat session management
+  const [sessionId, setSessionId] = useState<string>('');
+  const [messageCount, setMessageCount] = useState(0);
+  const [chatLimitReached, setChatLimitReached] = useState(false);
+  const [lastSubmittedFeatures, setLastSubmittedFeatures] = useState<TabularFeaturesInput | null>(null);
+
+  // Generate session ID on mount
+  useEffect(() => {
+    setSessionId(crypto.randomUUID());
+  }, []);
 
   const handleManualSubmit = (data: unknown) => {
     console.log('Manual data submitted:', data);
@@ -64,6 +75,7 @@ export default function Home() {
   const submitTabularMVP = async (features: TabularFeaturesInput) => {
     setIsAnalyzing(true);
     setAppState('analyzing');
+    setLastSubmittedFeatures(features); // Store features for chat context
     try {
       const resp = await fetch('/api/tabular/predict', {
         method: 'POST',
@@ -157,7 +169,19 @@ export default function Home() {
     }
   };
 
-  const handleChatMessage = (message: string) => {
+  const handleChatMessage = useCallback(async (message: string) => {
+    // Check if limit reached
+    if (messageCount >= 3 || chatLimitReached) {
+      const limitMessage: Message = {
+        id: Date.now().toString(),
+        type: 'ai',
+        content: "You've reached the 3-message limit for this session. Please contact us for enterprise services for more AI answers.",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, limitMessage]);
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
@@ -167,17 +191,108 @@ export default function Home() {
     
     setMessages(prev => [...prev, userMessage]);
 
-    // Simulate AI response
-    setTimeout(() => {
+    // Add typing indicator
+    const typingMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      type: 'ai',
+      content: '',
+      timestamp: new Date(),
+      isTyping: true
+    };
+    setMessages(prev => [...prev, typingMessage]);
+
+    try {
+      // Prepare context for chat API
+      if (!analysisResult || !lastSubmittedFeatures) {
+        throw new Error('No analysis result available');
+      }
+
+      const context = {
+        verdict: analysisResult.verdict,
+        confidence: analysisResult.confidence,
+        features: analysisResult.feature_importances,
+        explanation: analysisResult.explanation,
+        input_values: lastSubmittedFeatures
+      };
+
+      const response = await fetch('/api/chat/ask', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          message: message,
+          context: context
+        }),
+      });
+
+      // Remove typing indicator
+      setMessages(prev => prev.filter(msg => !msg.isTyping));
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to get AI response');
+      }
+
+      const data = await response.json();
+      
+      // Update message count and limit status
+      setMessageCount(prev => prev + 1);
+      setChatLimitReached(data.limit_reached);
+
       const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: (Date.now() + 2).toString(),
         type: 'ai',
-        content: "I'd be happy to help explain the analysis results. The detection algorithm uses advanced machine learning techniques to identify exoplanet signatures in the flux data. Would you like me to elaborate on any specific aspect?",
+        content: data.response,
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, aiMessage]);
-    }, 1500);
+
+    } catch (error) {
+      console.error('Chat error:', error);
+      
+      // Remove typing indicator
+      setMessages(prev => prev.filter(msg => !msg.isTyping));
+      
+      const errorMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        type: 'ai',
+        content: 'Unable to reach AI assistant. Please try again.',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    }
+  }, [messageCount, chatLimitReached, analysisResult, lastSubmittedFeatures, sessionId]);
+
+  const handleNavigateToSection = (section: string) => {
+    // First go to landing page if not already there
+    if (appState !== 'landing') {
+      setAppState('landing');
+      // Wait for the landing page to render, then scroll to section
+      setTimeout(() => {
+        const element = document.getElementById(section);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    } else {
+      // Already on landing page, just scroll to section
+      const element = document.getElementById(section);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  const handleNavigateHome = () => {
+    // Go to landing page and scroll to top
+    setAppState('landing');
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
 
   const resetApp = () => {
@@ -185,6 +300,12 @@ export default function Home() {
     setAnalysisResult(null);
     setMessages([]);
     setIsAnalyzing(false);
+    // Reset chat state
+    setMessageCount(0);
+    setChatLimitReached(false);
+    setLastSubmittedFeatures(null);
+    // Generate new session ID
+    setSessionId(crypto.randomUUID());
   };
 
   return (
@@ -216,7 +337,11 @@ export default function Home() {
       </div>
 
       {/* Header */}
-      <Header onOpen3DViewer={() => setShow3DViewer(true)} />
+      <Header 
+        onOpen3DViewer={() => setShow3DViewer(true)}
+        onNavigateHome={handleNavigateHome}
+        onNavigateToSection={handleNavigateToSection}
+      />
 
       <div className="relative z-10 pt-16">
         {appState === 'landing' && (
@@ -268,29 +393,11 @@ export default function Home() {
                 </motion.div>
 
                 {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <div className="flex justify-center">
                   <motion.button
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => startAnalysis({})}
-                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cosmic-500 to-pink-500 
-                             text-white font-semibold text-lg rounded-xl shadow-lg
-                             hover:from-cosmic-600 hover:to-pink-600
-                             focus:ring-4 focus:ring-cosmic-400/20
-                             transition-all duration-200"
-                  >
-                    <Sparkles className="w-6 h-6" />
-                    Analyze with AI
-                    <ArrowRight className="w-5 h-5" />
-                  </motion.button>
-                  
-                  <motion.button
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.7 }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShow3DViewer(true)}
@@ -429,6 +536,8 @@ export default function Home() {
                     onSendMessage={handleChatMessage}
                     messages={messages}
                     isLoading={isAnalyzing}
+                    remainingMessages={3 - messageCount}
+                    limitReached={chatLimitReached}
                   />
                 </div>
               </div>

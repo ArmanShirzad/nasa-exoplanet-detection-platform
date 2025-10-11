@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import tabular, lightcurve
+from .routers import tabular, lightcurve, chat
 
 
 app = FastAPI(
@@ -26,3 +26,4 @@ def healthz() -> dict:
 
 app.include_router(tabular.router, prefix="/v1/tabular", tags=["tabular"])
 app.include_router(lightcurve.router, prefix="/v1/lightcurve", tags=["lightcurve"])
+app.include_router(chat.router, prefix="/v1/chat", tags=["chat"])

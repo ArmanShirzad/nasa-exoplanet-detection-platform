@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot, User, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -16,87 +16,110 @@ interface ChatInterfaceProps {
   onSendMessage: (message: string) => void;
   messages: Message[];
   isLoading?: boolean;
+  remainingMessages?: number;
+  limitReached?: boolean;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({
+// Memoized MessageBubble component to prevent unnecessary re-renders
+const MessageBubble = React.memo(({ message }: { message: Message }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    exit={{ opacity: 0, y: -20, scale: 0.95 }}
+    className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} mb-4`}
+  >
+    <div className={`flex items-start gap-3 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+      <div className={`
+        flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center
+        ${message.type === 'user' 
+          ? 'bg-gradient-to-r from-space-500 to-nebula-500' 
+          : 'bg-gradient-to-r from-cosmic-500 to-pink-500'
+        }
+      `}>
+        {message.type === 'user' ? (
+          <User className="w-4 h-4 text-white" />
+        ) : (
+          <Bot className="w-4 h-4 text-white" />
+        )}
+      </div>
+      
+      <div className={`
+        px-4 py-3 rounded-2xl backdrop-blur-sm
+        ${message.type === 'user'
+          ? 'bg-gradient-to-r from-space-500/20 to-nebula-500/20 border border-space-400/30'
+          : 'bg-white/10 border border-white/20'
+        }
+      `}>
+        {message.isTyping ? (
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-space-400" />
+            <span className="text-gray-400 text-sm">AI is analyzing...</span>
+          </div>
+        ) : (
+          <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">
+            {message.content}
+          </p>
+        )}
+        <p className="text-xs text-gray-400 mt-2">
+          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </p>
+      </div>
+    </div>
+  </motion.div>
+));
+
+MessageBubble.displayName = 'MessageBubble';
+
+const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   onSendMessage,
   messages,
-  isLoading = false
+  isLoading = false,
+  remainingMessages = 3,
+  limitReached = false
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (inputValue.trim() && !isLoading) {
       onSendMessage(inputValue.trim());
       setInputValue('');
     }
-  };
+  }, [inputValue, isLoading, onSendMessage]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
     }
-  };
+  }, [handleSubmit]);
 
-  const MessageBubble = ({ message }: { message: Message }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -20, scale: 0.95 }}
-      className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} mb-4`}
-    >
-      <div className={`flex items-start gap-3 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-        <div className={`
-          flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center
-          ${message.type === 'user' 
-            ? 'bg-gradient-to-r from-space-500 to-nebula-500' 
-            : 'bg-gradient-to-r from-cosmic-500 to-pink-500'
-          }
-        `}>
-          {message.type === 'user' ? (
-            <User className="w-4 h-4 text-white" />
-          ) : (
-            <Bot className="w-4 h-4 text-white" />
-          )}
-        </div>
-        
-        <div className={`
-          px-4 py-3 rounded-2xl backdrop-blur-sm
-          ${message.type === 'user'
-            ? 'bg-gradient-to-r from-space-500/20 to-nebula-500/20 border border-space-400/30'
-            : 'bg-white/10 border border-white/20'
-          }
-        `}>
-          {message.isTyping ? (
-            <div className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-space-400" />
-              <span className="text-gray-400 text-sm">AI is analyzing...</span>
-            </div>
-          ) : (
-            <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">
-              {message.content}
-            </p>
-          )}
-          <p className="text-xs text-gray-400 mt-2">
-            {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </p>
-        </div>
-      </div>
-    </motion.div>
-  );
+  // Memoize suggested questions to prevent re-creation
+  const suggestedQuestions = useMemo(() => [
+    "What does the transit depth tell us?",
+    "How confident is this detection?",
+    "What are the key factors?",
+    "Explain the feature importance"
+  ], []);
+
+  const handleSuggestedQuestion = useCallback((question: string) => {
+    onSendMessage(question);
+  }, [onSendMessage]);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  }, []);
 
   return (
     <motion.div
@@ -114,7 +137,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <div>
               <h3 className="font-semibold text-white">NASA AI Assistant</h3>
               <p className="text-xs text-gray-400">
-                {messages.length === 0 ? 'Ask me about exoplanet detection' : 'Analyzing your results'}
+                {limitReached 
+                  ? 'Limit reached - Contact for enterprise services' 
+                  : messages.length === 0 
+                    ? 'Ask me about exoplanet detection' 
+                    : `${remainingMessages}/3 questions remaining`
+                }
               </p>
             </div>
           </div>
@@ -161,15 +189,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       Hi! I&apos;m your NASA AI assistant. I can help explain the analysis results and answer questions about exoplanet detection.
                     </p>
                     <div className="flex flex-wrap gap-2 justify-center">
-                      {[
-                        "What does the transit depth tell us?",
-                        "How confident is this detection?",
-                        "What are the key factors?",
-                        "Explain the feature importance"
-                      ].map((question) => (
+                      {suggestedQuestions.map((question) => (
                         <button
                           key={question}
-                          onClick={() => onSendMessage(question)}
+                          onClick={() => handleSuggestedQuestion(question)}
                           className="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 text-gray-300 rounded-lg transition-colors"
                         >
                           {question}
@@ -205,49 +228,64 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
             {/* Input */}
             <div className="p-4 border-t border-white/10">
-              <form onSubmit={handleSubmit} className="flex gap-3">
-                <div className="flex-1 relative">
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Ask about the analysis results..."
-                    className="w-full px-4 py-3 bg-white/5 border border-gray-600 rounded-lg 
-                             focus:border-space-400 focus:ring-2 focus:ring-space-400/20 
-                             transition-all duration-200 text-white placeholder-gray-400
-                             backdrop-blur-sm"
-                    disabled={isLoading}
-                  />
+              {limitReached ? (
+                <div className="text-center py-4">
+                  <div className="px-4 py-3 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-400/30 rounded-lg">
+                    <p className="text-red-300 text-sm font-medium mb-2">
+                      You've reached the 3-message limit for this session.
+                    </p>
+                    <p className="text-gray-400 text-xs">
+                      Please contact us for enterprise services for more AI answers.
+                    </p>
+                  </div>
                 </div>
-                <motion.button
-                  type="submit"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  disabled={!inputValue.trim() || isLoading}
-                  className="px-4 py-3 bg-gradient-to-r from-space-500 to-nebula-500 
-                           text-white rounded-lg shadow-lg
-                           hover:from-space-600 hover:to-nebula-600
-                           focus:ring-4 focus:ring-space-400/20
-                           transition-all duration-200
-                           disabled:opacity-50 disabled:cursor-not-allowed
-                           flex items-center justify-center"
-                >
-                  {isLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Send className="w-5 h-5" />
-                  )}
-                </motion.button>
-              </form>
+              ) : (
+                <form onSubmit={handleSubmit} className="flex gap-3">
+                  <div className="flex-1 relative">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={inputValue}
+                      onChange={handleInputChange}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Ask about the analysis results..."
+                      className="w-full px-4 py-3 bg-white/5 border border-gray-600 rounded-lg 
+                               focus:border-space-400 focus:ring-2 focus:ring-space-400/20 
+                               transition-all duration-200 text-white placeholder-gray-400
+                               backdrop-blur-sm"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <motion.button
+                    type="submit"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    disabled={!inputValue.trim() || isLoading}
+                    className="px-4 py-3 bg-gradient-to-r from-space-500 to-nebula-500 
+                             text-white rounded-lg shadow-lg
+                             hover:from-space-600 hover:to-nebula-600
+                             focus:ring-4 focus:ring-space-400/20
+                             transition-all duration-200
+                             disabled:opacity-50 disabled:cursor-not-allowed
+                             flex items-center justify-center"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Send className="w-5 h-5" />
+                    )}
+                  </motion.button>
+                </form>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </motion.div>
   );
-};
+});
+
+ChatInterface.displayName = 'ChatInterface';
 
 export default ChatInterface;
 

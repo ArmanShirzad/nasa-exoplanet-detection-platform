@@ -6,15 +6,17 @@ import { Globe, Star, Menu, X, Github, Instagram, ExternalLink, Map } from 'luci
 
 interface HeaderProps {
   onOpen3DViewer?: () => void;
+  onNavigateHome?: () => void;
+  onNavigateToSection?: (section: string) => void;
 }
 
-export default function Header({ onOpen3DViewer }: HeaderProps) {
+export default function Header({ onOpen3DViewer, onNavigateHome, onNavigateToSection }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navigation = [
-    { name: 'Home', href: '#home' },
-    { name: 'Meet the Data', href: '#data' },
-    { name: 'About', href: '#about' },
+    { name: 'Home', href: '#home', onClick: onNavigateHome },
+    { name: 'Meet the Data', href: '#data', onClick: () => onNavigateToSection?.('data') },
+    { name: 'About', href: '#about', onClick: () => onNavigateToSection?.('about') },
   ];
 
   const socialLinks = [
@@ -34,6 +36,7 @@ export default function Header({ onOpen3DViewer }: HeaderProps) {
           {/* Logo */}
           <motion.div
             whileHover={{ scale: 1.05 }}
+            onClick={onNavigateHome}
             className="flex items-center gap-3 cursor-pointer"
           >
             <div className="w-10 h-10 rounded-full bg-gradient-to-r from-space-500 to-nebula-500 flex items-center justify-center">
@@ -51,15 +54,15 @@ export default function Header({ onOpen3DViewer }: HeaderProps) {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
             {navigation.map((item) => (
-              <motion.a
+              <motion.button
                 key={item.name}
-                href={item.href}
+                onClick={item.onClick}
                 whileHover={{ y: -2 }}
-                className="text-gray-300 hover:text-white transition-colors duration-200 relative group"
+                className="text-gray-300 hover:text-white transition-colors duration-200 relative group cursor-pointer"
               >
                 {item.name}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-space-400 to-nebula-400 transition-all duration-300 group-hover:w-full" />
-              </motion.a>
+              </motion.button>
             ))}
           </nav>
 
@@ -119,15 +122,17 @@ export default function Header({ onOpen3DViewer }: HeaderProps) {
           <div className="py-4 border-t border-white/10">
             <nav className="flex flex-col gap-4">
               {navigation.map((item) => (
-                <motion.a
+                <motion.button
                   key={item.name}
-                  href={item.href}
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={() => {
+                    item.onClick?.();
+                    setIsMenuOpen(false);
+                  }}
                   whileHover={{ x: 10 }}
-                  className="text-gray-300 hover:text-white transition-colors duration-200 py-2"
+                  className="text-gray-300 hover:text-white transition-colors duration-200 py-2 text-left cursor-pointer"
                 >
                   {item.name}
-                </motion.a>
+                </motion.button>
               ))}
             </nav>
             

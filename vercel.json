@@ -13,6 +13,10 @@
       "destination": "https://nasa-exoplanet-2025.onrender.com/v1/lightcurve/analyze"
     },
     {
+      "source": "/api/chat/ask",
+      "destination": "https://nasa-exoplanet-2025.onrender.com/v1/chat/ask"
+    },
+    {
       "source": "/(.*)",
       "destination": "/frontend/$1"
     }
