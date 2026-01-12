@@ -52,14 +52,25 @@ export default function Footer() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white">NASA Exoplanet Explorer</h3>
-                <div className="flex items-center gap-1 text-xs text-gray-400">
-                  <Star className="w-3 h-3" />
-                  <span>Powered by Armana Team- NASA Space Apps Challenge 2025</span>
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <Star className="w-3 h-3" />
+                    <span>Powered by Armana Team- NASA Space Apps Challenge 2025</span>
+                  </div>
+                  <a
+                    href="https://armanshirzad.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-nebula-400 hover:text-nebula-300 transition-colors flex items-center gap-1"
+                  >
+                    <span>Created by Arman Shirzad</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
                 </div>
               </div>
             </motion.div>
             <p className="text-gray-400 text-sm leading-relaxed mb-4">
-              Discover worlds beyond our solar system with the same tools NASA uses. 
+              Discover worlds beyond our solar system with the same tools NASA uses.
               Advanced AI analysis for exoplanet detection from space-based light curves.
             </p>
             <div className="flex items-center gap-4">
@@ -80,7 +91,7 @@ export default function Footer() {
             </div>
           </div>
 
-          </div>
+        </div>
 
         {/* Bottom Section */}
         <motion.div
@@ -103,7 +114,7 @@ export default function Footer() {
               </motion.div>
               <span>for space exploration</span>
             </div>
-            
+
             <div className="flex items-center gap-6 text-sm">
               <a href="/privacy" className="text-gray-400 hover:text-white transition-colors">
                 Privacy Policy
@@ -126,7 +137,7 @@ export default function Footer() {
             className="mt-6 p-4 glass rounded-lg"
           >
             <p className="text-xs text-gray-400 leading-relaxed">
-              <strong className="text-white">Disclaimer:</strong> This application is developed as part of the NASA Space Apps Challenge. 
+              <strong className="text-white">Disclaimer:</strong> This application is developed as part of the NASA Space Apps Challenge.
               While it uses NASA data and follows scientific principles.
             </p>
           </motion.div>

@@ -17,6 +17,9 @@ export const metadata: Metadata = {
     description: "Discover exoplanets using advanced AI analysis",
     type: "website",
   },
+  icons: {
+    icon: "/nasa-logo.svg",
+  },
 };
 
 export default function RootLayout({
