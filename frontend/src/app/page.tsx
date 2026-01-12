@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Sparkles, 
-  Globe, 
-  Star, 
+import {
+  Sparkles,
+  Globe,
+  Star,
   Activity,
   ArrowRight
 } from 'lucide-react';
@@ -17,6 +18,9 @@ import DataExplorer from '@/components/ui/DataExplorer';
 import Header from '@/components/ui/Header';
 import Footer from '@/components/ui/Footer';
 import Exoplanet3DViewer from '@/components/visualization/Exoplanet3DViewer';
+import ExoplanetExplorer from '@/components/explorer/ExoplanetExplorer';
+import AboutModal from '@/components/ui/AboutModal';
+import { processedExoplanetData, ExoplanetData } from '@/utils/exoplanetData';
 
 interface FeatureImportance {
   feature: string;
@@ -55,12 +59,53 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [showVisualization, setShowVisualization] = useState(false);
   const [show3DViewer, setShow3DViewer] = useState(false);
-  
+  const [selectedPlanet, setSelectedPlanet] = useState<ExoplanetData | null>(null);
+  const [activeTab, setActiveTab] = useState<'explore' | 'analyze'>('explore');
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
+
   // Chat session management
   const [sessionId, setSessionId] = useState<string>('');
   const [messageCount, setMessageCount] = useState(0);
   const [chatLimitReached, setChatLimitReached] = useState(false);
   const [lastSubmittedFeatures, setLastSubmittedFeatures] = useState<TabularFeaturesInput | null>(null);
+
+  // Create a wrapper component for search params logic to avoid hydration issues
+  function URLStateHandler({
+    onOpen3D,
+    onSelectPlanet,
+    onSetTab
+  }: {
+    onOpen3D: () => void;
+    onSelectPlanet: (planet: ExoplanetData) => void;
+    onSetTab: (tab: 'explore' | 'analyze') => void;
+  }) {
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+      const view = searchParams.get('view');
+      const planetId = searchParams.get('planet');
+      const mode = searchParams.get('mode');
+
+      if (view === '3d') {
+        onOpen3D();
+      }
+
+      if (planetId) {
+        const planet = processedExoplanetData.find(p => p.id === planetId);
+        if (planet) {
+          onSelectPlanet(planet);
+        }
+      }
+
+      if (mode === 'analyze') {
+        onSetTab('analyze');
+      } else {
+        onSetTab('explore');
+      }
+    }, [searchParams, onOpen3D, onSelectPlanet, onSetTab]);
+
+    return null;
+  }
 
   // Generate session ID on mount
   useEffect(() => {
@@ -80,13 +125,15 @@ export default function Home() {
       const resp = await fetch('/api/tabular/predict', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ features: {
-          period_days: Number(features.period_days),
-          transit_depth_ppm: Number(features.transit_depth_ppm),
-          planet_radius_re: Number(features.planet_radius_re),
-          stellar_radius_rs: Number(features.stellar_radius_rs),
-          snr: Number(features.snr),
-        }, mission: 'KEPLER', object_id: 'UI-MVP' }),
+        body: JSON.stringify({
+          features: {
+            period_days: Number(features.period_days),
+            transit_depth_ppm: Number(features.transit_depth_ppm),
+            planet_radius_re: Number(features.planet_radius_re),
+            stellar_radius_rs: Number(features.stellar_radius_rs),
+            snr: Number(features.snr),
+          }, mission: 'KEPLER', object_id: 'UI-MVP'
+        }),
       });
       const data = await resp.json();
       // Map backend TabularResponse -> AnalysisResult UI shape
@@ -113,7 +160,7 @@ export default function Home() {
   const startAnalysis = async (data: unknown) => {
     setIsAnalyzing(true);
     setAppState('analyzing');
-    
+
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -121,7 +168,7 @@ export default function Home() {
       content: 'I submitted manual data for analysis',
       timestamp: new Date()
     };
-    
+
     setMessages(prev => [...prev, userMessage]);
 
     try {
@@ -150,13 +197,13 @@ export default function Home() {
         content: `Analysis complete! ${result.verdict} with ${result.confidence}% confidence. ${result.explanation}`,
         timestamp: new Date()
       };
-      
+
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error('Analysis error:', error);
       setIsAnalyzing(false);
       setAppState('landing');
-      
+
       // Add error message
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -164,7 +211,7 @@ export default function Home() {
         content: 'Sorry, there was an error analyzing your data. Please try again.',
         timestamp: new Date()
       };
-      
+
       setMessages(prev => [...prev, errorMessage]);
     }
   };
@@ -188,7 +235,7 @@ export default function Home() {
       content: message,
       timestamp: new Date()
     };
-    
+
     setMessages(prev => [...prev, userMessage]);
 
     // Add typing indicator
@@ -236,7 +283,7 @@ export default function Home() {
       }
 
       const data = await response.json();
-      
+
       // Update message count and limit status
       setMessageCount(prev => prev + 1);
       setChatLimitReached(data.limit_reached);
@@ -247,52 +294,55 @@ export default function Home() {
         content: data.response,
         timestamp: new Date()
       };
-      
+
       setMessages(prev => [...prev, aiMessage]);
 
     } catch (error) {
       console.error('Chat error:', error);
-      
+
       // Remove typing indicator
       setMessages(prev => prev.filter(msg => !msg.isTyping));
-      
+
       const errorMessage: Message = {
         id: (Date.now() + 2).toString(),
         type: 'ai',
         content: 'Unable to reach AI assistant. Please try again.',
         timestamp: new Date()
       };
-      
+
       setMessages(prev => [...prev, errorMessage]);
     }
   }, [messageCount, chatLimitReached, analysisResult, lastSubmittedFeatures, sessionId]);
 
+  const updateTab = (tab: 'explore' | 'analyze') => {
+    setActiveTab(tab);
+    // Update URL without reload
+    const url = new URL(window.location.href);
+    url.searchParams.set('mode', tab);
+    window.history.pushState({}, '', url);
+  };
+
   const handleNavigateToSection = (section: string) => {
-    // First go to landing page if not already there
-    if (appState !== 'landing') {
-      setAppState('landing');
-      // Wait for the landing page to render, then scroll to section
-      setTimeout(() => {
-        const element = document.getElementById(section);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
-    } else {
-      // Already on landing page, just scroll to section
-      const element = document.getElementById(section);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
+    if (section === 'about') {
+      setIsAboutOpen(true);
+      return;
+    }
+    if (section === 'data') {
+      updateTab('explore');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // Default behavior for other sections if they exist in valid states
+    const element = document.getElementById(section);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   const handleNavigateHome = () => {
-    // Go to landing page and scroll to top
-    setAppState('landing');
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 100);
+    updateTab('explore');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const resetApp = () => {
@@ -309,26 +359,43 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden flex flex-col">
+      <Suspense fallback={null}>
+        <URLStateHandler
+          onOpen3D={() => setShow3DViewer(true)}
+          onSelectPlanet={(planet) => {
+            setSelectedPlanet(planet);
+            // Update URL
+            const url = new URL(window.location.href);
+            if (planet) {
+              url.searchParams.set('planet', planet.id);
+            } else {
+              url.searchParams.delete('planet');
+            }
+            window.history.pushState({}, '', url);
+          }}
+          onSetTab={setActiveTab}
+        />
+      </Suspense>
       {/* Background Elements */}
       <div className="fixed inset-0 pointer-events-none">
         <motion.div
-          animate={{ 
+          animate={{
             rotate: 360,
             scale: [1, 1.1, 1]
           }}
-          transition={{ 
+          transition={{
             rotate: { duration: 20, repeat: Infinity, ease: "linear" },
             scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
           }}
           className="absolute top-20 left-20 w-32 h-32 bg-gradient-to-r from-space-400/20 to-nebula-400/20 rounded-full blur-xl"
         />
         <motion.div
-          animate={{ 
+          animate={{
             rotate: -360,
             scale: [1.1, 1, 1.1]
           }}
-          transition={{ 
+          transition={{
             rotate: { duration: 25, repeat: Infinity, ease: "linear" },
             scale: { duration: 6, repeat: Infinity, ease: "easeInOut" }
           }}
@@ -337,214 +404,194 @@ export default function Home() {
       </div>
 
       {/* Header */}
-      <Header 
+      <Header
         onOpen3DViewer={() => setShow3DViewer(true)}
         onNavigateHome={handleNavigateHome}
         onNavigateToSection={handleNavigateToSection}
       />
 
-      <div className="relative z-10 pt-16">
-        {appState === 'landing' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="min-h-screen flex flex-col"
-          >
+      {/* Custom Header Actions */}
+      <div className="absolute top-4 right-20 z-50 flex gap-4">
+        {/* We can place the About button here if needed */}
+      </div>
 
-            {/* Hero Section */}
-            <main className="flex-1 flex items-center justify-center px-6">
-              <div className="max-w-4xl w-full text-center">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="mb-12"
-                >
-                  <h1 className="text-5xl md:text-7xl font-bold mb-6">
-                    <span className="text-gradient">NASA</span>
-                    <br />
-                    <span className="text-white">Exoplanet</span>
-                    <br />
-                    <span className="text-gradient-cosmic">Explorer</span>
-                  </h1>
-                  <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
-                    Discover worlds beyond our solar system with the same tools NASA uses.
-                  </p>
-                </motion.div>
+      <div className="relative z-10 pt-24 pb-12 px-6 flex-1 flex flex-col">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex-1 max-w-7xl mx-auto w-full flex flex-col"
+        >
+          {/* Hero Section - Compact */}
+          <div className="text-center mb-10">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              <span className="text-gradient">NASA</span> <span className="text-white">Exoplanet</span> <span className="text-gradient-cosmic">Explorer</span>
+            </h1>
+            <p className="text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed mb-4">
+              Instantly analyze light curve data to detect exoplanet transits using our AI model.
+              <br />Visualize confirm/false-positive signals in seconds.
+            </p>
 
-                {/* Manual Input Form */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="mb-8"
-                >
-                  <div className="glass rounded-2xl p-8">
-                    <motion.div
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                    >
-                      {/* MVP: Simple five-field tabular input only */}
-                      <div className="mb-6">
+            <div className="flex items-center justify-center gap-2 text-xs text-gray-500 uppercase tracking-widest border-t border-white/5 pt-4 inline-block px-8">
+              <Activity className="w-3 h-3 inline mr-1" />
+              Data Source: NASA Exoplanet Archive (Kepler & TESS) • Updated Daily via API
+            </div>
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="flex justify-center mb-8">
+            <div className="bg-white/5 p-1 rounded-xl border border-white/10 flex gap-2">
+              <button
+                onClick={() => updateTab('explore')}
+                className={`px-6 py-2 rounded-lg font-medium transition-all ${activeTab === 'explore'
+                  ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Globe className="w-4 h-4" /> Explore Data
+                </span>
+              </button>
+              <button
+                onClick={() => updateTab('analyze')}
+                className={`px-6 py-2 rounded-lg font-medium transition-all ${activeTab === 'analyze'
+                  ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" /> AI Prediction
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="flex-1 min-h-[600px] bg-black/20 backdrop-blur-sm rounded-3xl border border-white/10 p-1 md:p-6 shadow-2xl overflow-hidden relative">
+
+            {/* Explore Tab */}
+            {activeTab === 'explore' && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="h-full"
+              >
+                <ExoplanetExplorer
+                  onSelectPlanet={(planet) => {
+                    setSelectedPlanet(planet);
+                    // Update URL
+                    const url = new URL(window.location.href);
+                    if (planet) {
+                      url.searchParams.set('planet', planet.id);
+                    } else {
+                      url.searchParams.delete('planet');
+                    }
+                    window.history.pushState({}, '', url);
+                  }}
+                  selectedPlanetId={selectedPlanet?.id}
+                />
+              </motion.div>
+            )}
+
+            {/* Analyze Tab */}
+            {activeTab === 'analyze' && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="h-full flex flex-col"
+              >
+
+                {appState === 'landing' && (
+                  <div className="flex-1 flex flex-col items-center justify-center">
+                    <div className="max-w-2xl w-full">
+                      <div className="glass rounded-2xl p-8 mb-8">
+                        <h3 className="text-xl font-bold text-white mb-6 text-center">Input Kepler Light Curve Parameters</h3>
                         <TabularMVPForm onSubmit={submitTabularMVP} />
                       </div>
-                    </motion.div>
+
+                      <div className="text-center">
+                        <p className="text-gray-400 text-sm mb-4">Or try sample data to see how it works</p>
+                        <button
+                          onClick={() => submitTabularMVP({
+                            period_days: '365',
+                            transit_depth_ppm: '100',
+                            planet_radius_re: '1',
+                            stellar_radius_rs: '1',
+                            snr: '10'
+                          })}
+                          className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-sm border border-white/10 transition-colors"
+                        >
+                          Load Earth-like Sample
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </motion.div>
+                )}
 
-                {/* CTA Buttons */}
-                <div className="flex justify-center">
-                  <motion.button
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setShow3DViewer(true)}
-                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-space-500 to-nebula-500 
-                             text-white font-semibold text-lg rounded-xl shadow-lg
-                             hover:from-space-600 hover:to-nebula-600
-                             focus:ring-4 focus:ring-space-400/20
-                             transition-all duration-200"
-                  >
-                    <Globe className="w-6 h-6" />
-                    Explore 3D Universe
-                  </motion.button>
-                </div>
-              </div>
-            </main>
+                {appState === 'analyzing' && (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        className="w-20 h-20 mx-auto mb-8"
+                      >
+                        <Activity className="w-full h-full text-space-400" />
+                      </motion.div>
+                      <h2 className="text-3xl font-bold text-white mb-4">Analyzing Signal</h2>
+                      <p className="text-gray-300">Running Random Forest Classifier...</p>
+                    </div>
+                  </div>
+                )}
 
-            {/* Meet the Data Section */}
-            <section id="data">
-              <DataExplorer />
-            </section>
-
-            {/* About Team and Challenge Section */}
-            <section id="about" className="py-16 px-6">
-              <div className="max-w-6xl mx-auto">
-                <div className="grid md:grid-cols-2 gap-8">
-                  {/* About Team */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="glass rounded-2xl p-8"
-                  >
-                    <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-space-500 to-nebula-500 flex items-center justify-center">
-                        <Star className="w-4 h-4 text-white" />
+                {appState === 'results' && analysisResult && (
+                  <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    <div className="grid lg:grid-cols-2 gap-8 h-full">
+                      {/* Results */}
+                      <div>
+                        <ResultsCard
+                          result={analysisResult}
+                          onVisualizeData={() => setShowVisualization(true)}
+                        />
+                        <div className="mt-4 flex justify-center">
+                          <button
+                            onClick={() => setAppState('landing')}
+                            className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/10"
+                          >
+                            Analyze Another Candidate
+                          </button>
+                        </div>
                       </div>
-                      About the Team
-                    </h3>
-                    <blockquote className="text-gray-300 leading-relaxed italic">
-                      <p className="mb-4">We are the Aramana Team, a diverse group of scientists, engineers, and dreamers brought together by curiosity and code. Based at BTU Cottbus-Senftenberg in Germany, we believe in open source, collaborative exploration, and pushing the boundaries of what AI can do for space science.</p>
-                      <p className="mb-4">
-                        Learn more about us at: <a href="https://teamarmana-nasaspaceapp2025.vercel.app/" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">teamarmana-nasaspaceapp2025.vercel.app</a>
-                      </p>
-                      <p>If you love turning data into discovery, come join us on this cosmic journey.</p>
-                    </blockquote>
-                  </motion.div>
 
-                  {/* About Challenge */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.1 }}
-                    className="glass rounded-2xl p-8"
-                  >
-                    <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cosmic-500 to-pink-500 flex items-center justify-center">
-                        <Globe className="w-4 h-4 text-white" />
+                      {/* Chat Interface */}
+                      <div className="h-[500px] lg:h-auto">
+                        <ChatInterface
+                          onSendMessage={handleChatMessage}
+                          messages={messages}
+                          isLoading={isAnalyzing}
+                          remainingMessages={3 - messageCount}
+                          limitReached={chatLimitReached}
+                        />
                       </div>
-                      About the Challenge
-                    </h3>
-                    <blockquote className="text-gray-300 leading-relaxed italic">
-                      <p>Aramana Team aims to harness the power of AI/ML to sift through NASA’s publicly available exoplanet datasets and automatically detect exoplanets at scale. We train on data from missions like Kepler, TESS, and K2, and large set of open source light  curve data of  Nasa automating what is today a largely manual process spotting those subtle transit dips and helping humanity find its next Earth.</p>
-                    </blockquote>
-                  </motion.div>
-                </div>
-              </div>
-            </section>
+                    </div>
+                  </div>
+                )}
 
-            {/* Footer */}
-            <Footer />
-          </motion.div>
-        )}
-
-        {appState === 'analyzing' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="min-h-screen flex items-center justify-center px-6"
-          >
-            <div className="text-center">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                className="w-20 h-20 mx-auto mb-8"
-              >
-                <Activity className="w-full h-full text-space-400" />
               </motion.div>
-              <h2 className="text-3xl font-bold text-white mb-4">Analyzing Your Data</h2>
-              <p className="text-gray-300 mb-8">Our AI is processing your astronomical data...</p>
-              <div className="w-64 h-2 bg-gray-700 rounded-full mx-auto overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: "100%" }}
-                  transition={{ duration: 3, ease: "easeInOut" }}
-                  className="h-full bg-gradient-to-r from-space-400 to-nebula-400 rounded-full"
-                />
-              </div>
-            </div>
-          </motion.div>
-        )}
+            )}
 
-        {appState === 'results' && analysisResult && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="min-h-screen p-6"
-          >
-            <div className="max-w-6xl mx-auto">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h2 className="text-3xl font-bold text-white mb-2">Analysis Results</h2>
-                  <p className="text-gray-400">Exoplanet detection analysis complete</p>
-                </div>
-                <button
-                  onClick={resetApp}
-                  className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
-                >
-                  New Analysis
-                </button>
-              </div>
+          </div>
 
-              <div className="grid lg:grid-cols-2 gap-8">
-                {/* Results */}
-                <div>
-                  <ResultsCard 
-                    result={analysisResult}
-                    onVisualizeData={() => setShowVisualization(true)}
-                  />
-                </div>
-
-                {/* Chat Interface */}
-                <div>
-                  <ChatInterface
-                    onSendMessage={handleChatMessage}
-                    messages={messages}
-                    isLoading={isAnalyzing}
-                    remainingMessages={3 - messageCount}
-                    limitReached={chatLimitReached}
-                  />
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
+          {/* Footer Elements moved to bottom of page naturally via flex layout */}
+        </motion.div>
       </div>
+
+      {/* Footer */}
+      <Footer />
+
+      {/* About Modal */}
+      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
 
       {/* Visualization Modal */}
       <AnimatePresence>
@@ -564,9 +611,8 @@ export default function Home() {
         {show3DViewer && (
           <Exoplanet3DViewer
             onClose={() => setShow3DViewer(false)}
-            onPlanetSelect={(planet) => {
-              console.log('Selected planet:', planet);
-            }}
+            selectedPlanet={selectedPlanet}
+            onPlanetSelect={setSelectedPlanet}
           />
         )}
       </AnimatePresence>
@@ -586,7 +632,7 @@ export default function Home() {
         <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
           <span className="text-xs text-white font-bold">3D</span>
         </div>
-        
+
         {/* Tooltip */}
         <div className="absolute bottom-full right-0 mb-2 px-3 py-1 bg-black/80 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
           Explore 3D Universe
