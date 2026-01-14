@@ -320,7 +320,13 @@ export default function Home() {
     }
     if (section === 'data') {
       updateTab('explore');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Small timeout to allow tab switch to render before scrolling
+      setTimeout(() => {
+        const element = document.getElementById('data');
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
       return;
     }
     if (section === 'analysis') {
@@ -454,7 +460,7 @@ export default function Home() {
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 min-h-[600px] bg-black/20 backdrop-blur-sm rounded-3xl border border-white/10 p-1 md:p-6 shadow-2xl overflow-hidden relative">
+          <div id="data" className="flex-1 min-h-[600px] bg-black/20 backdrop-blur-sm rounded-3xl border border-white/10 p-1 md:p-6 shadow-2xl overflow-hidden relative">
 
             {/* Explore Tab */}
             {activeTab === 'explore' && (

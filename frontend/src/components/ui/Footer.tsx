@@ -71,7 +71,7 @@ export default function Footer({ onNavigateToSection }: { onNavigateToSection?: 
                     rel="noopener noreferrer"
                     className="text-xs text-nebula-400 hover:text-nebula-300 transition-colors flex items-center gap-1"
                   >
-                    <span>Created by Arman Shirzad</span>
+                    <span>Led by Arman Shirzad</span>
                     <ExternalLink className="w-2.5 h-2.5" />
                   </a>
                 </div>
