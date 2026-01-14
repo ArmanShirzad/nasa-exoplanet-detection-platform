@@ -18,9 +18,12 @@ export const metadata: Metadata = {
     type: "website",
   },
   icons: {
-    icon: "/favicon.png",
-    shortcut: "/favicon.png",
-    apple: "/favicon.png",
+    icon: [
+      { url: "/favicon.ico?v=2", sizes: "32x32", type: "image/x-icon" },
+      { url: "/favicon.png?v=2", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico?v=2",
+    apple: { url: "/favicon.png?v=2", sizes: "180x180", type: "image/png" },
   },
 };
 
@@ -31,6 +34,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png?v=2" />
+        <link rel="apple-touch-icon" href="/favicon.png?v=2" />
+      </head>
       <body
         className={`${inter.variable} font-sans antialiased`}
       >
