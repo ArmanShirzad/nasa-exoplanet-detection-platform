@@ -12,16 +12,16 @@ import {
     ResponsiveContainer,
     Cell
 } from 'recharts';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Info, ArrowRight, Globe, Ruler, Thermometer } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Search, ArrowRight, Ruler, Thermometer } from 'lucide-react';
 import { ExoplanetData, processedExoplanetData, getCategoryColor } from '@/utils/exoplanetData';
 
 interface ExoplanetExplorerProps {
-    onSelectPlanet: (planet: ExoplanetData) => void;
+    onSelectPlanet: (planet: ExoplanetData | null) => void;
     selectedPlanetId?: string | null;
 }
 
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { payload: ExoplanetData }[] }) => {
     if (active && payload && payload.length) {
         const data = payload[0].payload;
         return (
@@ -77,8 +77,8 @@ export default function ExoplanetExplorer({ onSelectPlanet, selectedPlanetId }: 
                             onMouseEnter={() => setHoveredPlanet(planet.id)}
                             onMouseLeave={() => setHoveredPlanet(null)}
                             className={`w-full text-left p-4 rounded-xl border transition-all duration-200 group ${selectedPlanetId === planet.id
-                                    ? 'bg-blue-500/20 border-blue-500/50 shadow-lg shadow-blue-500/10'
-                                    : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                                ? 'bg-blue-500/20 border-blue-500/50 shadow-lg shadow-blue-500/10'
+                                : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
                                 }`}
                         >
                             <div className="flex justify-between items-start mb-2">
@@ -124,7 +124,7 @@ export default function ExoplanetExplorer({ onSelectPlanet, selectedPlanetId }: 
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-3xl font-bold text-white">{selectedPlanet.name}</h2>
                             <button
-                                onClick={() => onSelectPlanet(null as any)}
+                                onClick={() => onSelectPlanet(null)}
                                 className="text-sm text-gray-400 hover:text-white flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
                             >
                                 Back to Chart
@@ -230,7 +230,7 @@ export default function ExoplanetExplorer({ onSelectPlanet, selectedPlanetId }: 
                                     <div key={cat} className="flex items-center gap-2">
                                         <div
                                             className="w-3 h-3 rounded-full"
-                                            style={{ backgroundColor: getCategoryColor(cat as any) }}
+                                            style={{ backgroundColor: getCategoryColor(cat) }}
                                         />
                                         <span className="text-gray-300">{cat}</span>
                                     </div>

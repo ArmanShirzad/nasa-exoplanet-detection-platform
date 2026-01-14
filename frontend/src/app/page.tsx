@@ -1,20 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
   Globe,
-  Star,
-  Activity,
-  ArrowRight
+  Activity
 } from 'lucide-react';
 import TabularMVPForm, { TabularFeaturesInput } from '@/components/forms/TabularMVPForm';
 import ChatInterface from '@/components/ui/ChatInterface';
 import ResultsCard from '@/components/results/ResultsCard';
 import FluxVisualization from '@/components/results/FluxVisualization';
-import DataExplorer from '@/components/ui/DataExplorer';
 import Header from '@/components/ui/Header';
 import Footer from '@/components/ui/Footer';
 import Exoplanet3DViewer from '@/components/visualization/Exoplanet3DViewer';
@@ -52,7 +49,6 @@ type InputMode = 'manual';
 type AppState = 'landing' | 'analyzing' | 'results';
 
 export default function Home() {
-  const [inputMode, setInputMode] = useState<InputMode>('manual');
   const [appState, setAppState] = useState<AppState>('landing');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -112,11 +108,6 @@ export default function Home() {
     setSessionId(crypto.randomUUID());
   }, []);
 
-  const handleManualSubmit = (data: unknown) => {
-    console.log('Manual data submitted:', data);
-    startAnalysis(data);
-  };
-
   const submitTabularMVP = async (features: TabularFeaturesInput) => {
     setIsAnalyzing(true);
     setAppState('analyzing');
@@ -141,7 +132,7 @@ export default function Home() {
         verdict: data.label === 'CONFIRMED' ? 'Exoplanet Detected' : 'Not an Exoplanet',
         confidence: Math.round((data.calibrated_confidence ?? data.probabilities?.CONFIRMED ?? 0) * 100),
         explanation: typeof data.explanations?.text === 'string' ? data.explanations.text : 'Baseline RF prediction.',
-        feature_importances: (Array.isArray(data.explanations?.top_shap) ? data.explanations.top_shap : []).map((s: any) => ({
+        feature_importances: (Array.isArray(data.explanations?.top_shap) ? data.explanations.top_shap : []).map((s: { feature: string | number; shap: unknown; value: unknown }) => ({
           feature: String(s.feature),
           importance: Math.abs(Number(s.shap) || 0),
           detail: `value=${s.value}`
@@ -332,6 +323,16 @@ export default function Home() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
+    if (section === 'analysis') {
+      updateTab('analyze');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (section === 'home') {
+      updateTab('explore');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
 
     // Default behavior for other sections if they exist in valid states
     const element = document.getElementById(section);
@@ -343,19 +344,6 @@ export default function Home() {
   const handleNavigateHome = () => {
     updateTab('explore');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const resetApp = () => {
-    setAppState('landing');
-    setAnalysisResult(null);
-    setMessages([]);
-    setIsAnalyzing(false);
-    // Reset chat state
-    setMessageCount(0);
-    setChatLimitReached(false);
-    setLastSubmittedFeatures(null);
-    // Generate new session ID
-    setSessionId(crypto.randomUUID());
   };
 
   return (
@@ -588,7 +576,7 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <Footer />
+      <Footer onNavigateToSection={handleNavigateToSection} />
 
       {/* About Modal */}
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />

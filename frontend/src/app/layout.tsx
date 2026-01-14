@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     type: "website",
   },
   icons: {
-    icon: "/nasa-logo.svg",
+    icon: "/favicon.png",
   },
 };
 

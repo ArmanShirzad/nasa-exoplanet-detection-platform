@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Github, Book, Mail } from 'lucide-react';
+import { X, Github, Mail } from 'lucide-react';
 
 interface AboutModalProps {
     isOpen: boolean;

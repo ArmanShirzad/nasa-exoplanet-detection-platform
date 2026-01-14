@@ -31,8 +31,8 @@ const MessageBubble = React.memo(({ message }: { message: Message }) => (
     <div className={`flex items-start gap-3 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
       <div className={`
         flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center
-        ${message.type === 'user' 
-          ? 'bg-gradient-to-r from-space-500 to-nebula-500' 
+        ${message.type === 'user'
+          ? 'bg-gradient-to-r from-space-500 to-nebula-500'
           : 'bg-gradient-to-r from-cosmic-500 to-pink-500'
         }
       `}>
@@ -42,7 +42,7 @@ const MessageBubble = React.memo(({ message }: { message: Message }) => (
           <Bot className="w-4 h-4 text-white" />
         )}
       </div>
-      
+
       <div className={`
         px-4 py-3 rounded-2xl backdrop-blur-sm
         ${message.type === 'user'
@@ -137,16 +137,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
             <div>
               <h3 className="font-semibold text-white">NASA AI Assistant</h3>
               <p className="text-xs text-gray-400">
-                {limitReached 
-                  ? 'Limit reached - Contact for enterprise services' 
-                  : messages.length === 0 
-                    ? 'Ask me about exoplanet detection' 
+                {limitReached
+                  ? 'Limit reached - Contact for enterprise services'
+                  : messages.length === 0
+                    ? 'Ask me about exoplanet detection'
                     : `${remainingMessages}/3 questions remaining`
                 }
               </p>
             </div>
           </div>
-          
+
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="p-2 hover:bg-white/10 rounded-lg transition-colors"
@@ -176,7 +176,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
                   <MessageBubble key={message.id} message={message} />
                 ))}
               </AnimatePresence>
-              
+
               {/* Welcome message when no messages */}
               {messages.length === 0 && (
                 <motion.div
@@ -202,7 +202,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
                   </div>
                 </motion.div>
               )}
-              
+
               {isLoading && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -222,7 +222,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
                   </div>
                 </motion.div>
               )}
-              
+
               <div ref={messagesEndRef} />
             </div>
 
@@ -232,7 +232,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
                 <div className="text-center py-4">
                   <div className="px-4 py-3 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-400/30 rounded-lg">
                     <p className="text-red-300 text-sm font-medium mb-2">
-                      You've reached the 3-message limit for this session.
+                      You&apos;ve reached the 3-message limit for this session.
                     </p>
                     <p className="text-gray-400 text-xs">
                       Please contact us for enterprise services for more AI answers.

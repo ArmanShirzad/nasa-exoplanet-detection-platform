@@ -4,8 +4,16 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Globe, Star, Heart, Github, Instagram, ExternalLink, Mail } from 'lucide-react';
 
-export default function Footer() {
+export default function Footer({ onNavigateToSection }: { onNavigateToSection?: (section: string) => void }) {
   const currentYear = new Date().getFullYear();
+
+  const handleNavClick = (e: React.MouseEvent, href: string) => {
+    if (href.startsWith('#') && onNavigateToSection) {
+      e.preventDefault();
+      const section = href.substring(1);
+      onNavigateToSection(section);
+    }
+  };
 
   const navigation = {
     main: [
@@ -91,6 +99,58 @@ export default function Footer() {
             </div>
           </div>
 
+          <div>
+            <h4 className="font-bold text-white mb-4">Navigation</h4>
+            <ul className="space-y-2">
+              {navigation.main.map((item) => (
+                <li key={item.name}>
+                  <a
+                    href={item.href}
+                    onClick={(e) => handleNavClick(e, item.href)}
+                    className="text-gray-400 hover:text-nebula-400 transition-colors text-sm"
+                  >
+                    {item.name}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-bold text-white mb-4">Resources</h4>
+            <ul className="space-y-2">
+              {navigation.resources.map((item) => (
+                <li key={item.name}>
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-nebula-400 transition-colors text-sm"
+                  >
+                    {item.name}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-bold text-white mb-4">Community</h4>
+            <ul className="space-y-2">
+              {navigation.community.map((item) => (
+                <li key={item.name}>
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-nebula-400 transition-colors text-sm"
+                  >
+                    {item.name}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         {/* Bottom Section */}

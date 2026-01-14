@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Database, Filter, Download, Eye, Globe } from 'lucide-react';
+import { Database, Filter, Download, Eye } from 'lucide-react';
 import InfoTooltip from './Tooltip';
 import Simple3DViewer from '../visualization/Simple3DViewer';
 
@@ -129,9 +129,8 @@ const categoryIcons = {
 export default function DataExplorer() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showQualityFilter, setShowQualityFilter] = useState(false);
-  const [show3DViewer, setShow3DViewer] = useState(false);
 
-  const filteredColumns = selectedCategory 
+  const filteredColumns = selectedCategory
     ? dataColumns.filter(col => col.category === selectedCategory)
     : dataColumns;
 
@@ -163,11 +162,10 @@ export default function DataExplorer() {
         >
           <button
             onClick={() => setSelectedCategory(null)}
-            className={`px-4 py-2 rounded-lg transition-all duration-200 ${
-              selectedCategory === null
+            className={`px-4 py-2 rounded-lg transition-all duration-200 ${selectedCategory === null
                 ? 'bg-gradient-to-r from-space-500 to-nebula-500 text-white shadow-lg'
                 : 'bg-white/10 text-gray-300 hover:bg-white/20'
-            }`}
+              }`}
           >
             All Columns
           </button>
@@ -175,11 +173,10 @@ export default function DataExplorer() {
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 rounded-lg transition-all duration-200 capitalize ${
-                selectedCategory === category
+              className={`px-4 py-2 rounded-lg transition-all duration-200 capitalize ${selectedCategory === category
                   ? 'bg-gradient-to-r from-space-500 to-nebula-500 text-white shadow-lg'
                   : 'bg-white/10 text-gray-300 hover:bg-white/20'
-              }`}
+                }`}
             >
               {categoryIcons[category as keyof typeof categoryIcons]} {category}
             </button>
@@ -196,11 +193,10 @@ export default function DataExplorer() {
         >
           <button
             onClick={() => setShowQualityFilter(!showQualityFilter)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-              showQualityFilter
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${showQualityFilter
                 ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
                 : 'bg-white/10 text-gray-300 hover:bg-white/20'
-            }`}
+              }`}
           >
             <Filter className="w-4 h-4" />
             Filter by QUALITY flags
@@ -243,7 +239,7 @@ export default function DataExplorer() {
                   <div></div>
                 </InfoTooltip>
               </div>
-              
+
               <div className="space-y-2">
                 <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                   <motion.div
@@ -255,9 +251,9 @@ export default function DataExplorer() {
                   />
                 </div>
                 <p className="text-xs text-gray-400">
-                  {column.type === 'number' ? 'Numeric data' : 
-                   column.type === 'text' ? 'Text identifier' : 
-                   'Bit flags'}
+                  {column.type === 'number' ? 'Numeric data' :
+                    column.type === 'text' ? 'Text identifier' :
+                      'Bit flags'}
                 </p>
               </div>
             </motion.div>
@@ -275,13 +271,13 @@ export default function DataExplorer() {
           <div className="text-center mb-8">
             <h3 className="text-2xl font-bold text-white mb-4">Explore Exoplanets in 3D</h3>
             <p className="text-gray-300 max-w-2xl mx-auto">
-              Visualize known exoplanets in 3D space and explore their properties. 
+              Visualize known exoplanets in 3D space and explore their properties.
               Click on planets to learn more about their characteristics and habitability.
             </p>
           </div>
-          
+
           <div className="glass rounded-2xl p-6">
-            <Simple3DViewer 
+            <Simple3DViewer
               className="w-full"
               onPlanetSelect={(planet) => {
                 console.log('Selected planet:', planet);

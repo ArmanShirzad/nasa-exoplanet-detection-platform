@@ -13,17 +13,17 @@ export interface TabularFeaturesInput {
 }
 
 // Individual input component to prevent re-renders
-const FormInput = React.memo(({ 
-  label, 
-  field, 
-  unit, 
-  value, 
-  error, 
-  onChange, 
-  onBlur 
-}: { 
-  label: string; 
-  field: keyof TabularFeaturesInput; 
+const FormInput = React.memo(({
+  label,
+  // field, // unused
+  unit,
+  value,
+  error,
+  onChange,
+  onBlur
+}: {
+  label: string;
+  field: keyof TabularFeaturesInput;
   unit?: string;
   value: string | number;
   error: string;
@@ -47,6 +47,7 @@ const FormInput = React.memo(({
     {error && <p className="text-xs text-red-400">{error}</p>}
   </div>
 ));
+FormInput.displayName = 'FormInput';
 
 export default function TabularMVPForm({ onSubmit }: { onSubmit: (features: TabularFeaturesInput) => void }) {
   const [features, setFeatures] = useState<TabularFeaturesInput>({
@@ -75,7 +76,7 @@ export default function TabularMVPForm({ onSubmit }: { onSubmit: (features: Tabu
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    const keys: (keyof TabularFeaturesInput)[] = ['period_days','transit_depth_ppm','planet_radius_re','stellar_radius_rs','snr'];
+    const keys: (keyof TabularFeaturesInput)[] = ['period_days', 'transit_depth_ppm', 'planet_radius_re', 'stellar_radius_rs', 'snr'];
     const nextErrors: Record<string, string> = {};
     let ok = true;
     keys.forEach(k => {
@@ -90,7 +91,7 @@ export default function TabularMVPForm({ onSubmit }: { onSubmit: (features: Tabu
   }, [features, onSubmit]);
 
   const canSubmit = useMemo(() => {
-    const keys: (keyof TabularFeaturesInput)[] = ['period_days','transit_depth_ppm','planet_radius_re','stellar_radius_rs','snr'];
+    const keys: (keyof TabularFeaturesInput)[] = ['period_days', 'transit_depth_ppm', 'planet_radius_re', 'stellar_radius_rs', 'snr'];
     return keys.every(k => {
       const v = String(features[k] ?? '');
       return isValidNumber(v) && isPositive(v) && !(errors[k as string]);
@@ -105,41 +106,41 @@ export default function TabularMVPForm({ onSubmit }: { onSubmit: (features: Tabu
       className="space-y-4"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormInput 
-          label="period_days" 
-          field="period_days" 
+        <FormInput
+          label="period_days"
+          field="period_days"
           value={features.period_days}
           error={errors.period_days || ''}
           onChange={(e) => update('period_days', e.target.value)}
           onBlur={(e) => validateField('period_days', e.target.value)}
         />
-        <FormInput 
-          label="transit_depth_ppm" 
-          field="transit_depth_ppm" 
+        <FormInput
+          label="transit_depth_ppm"
+          field="transit_depth_ppm"
           value={features.transit_depth_ppm}
           error={errors.transit_depth_ppm || ''}
           onChange={(e) => update('transit_depth_ppm', e.target.value)}
           onBlur={(e) => validateField('transit_depth_ppm', e.target.value)}
         />
-        <FormInput 
-          label="planet_radius_re" 
-          field="planet_radius_re" 
+        <FormInput
+          label="planet_radius_re"
+          field="planet_radius_re"
           value={features.planet_radius_re}
           error={errors.planet_radius_re || ''}
           onChange={(e) => update('planet_radius_re', e.target.value)}
           onBlur={(e) => validateField('planet_radius_re', e.target.value)}
         />
-        <FormInput 
-          label="stellar_radius_rs" 
-          field="stellar_radius_rs" 
+        <FormInput
+          label="stellar_radius_rs"
+          field="stellar_radius_rs"
           value={features.stellar_radius_rs}
           error={errors.stellar_radius_rs || ''}
           onChange={(e) => update('stellar_radius_rs', e.target.value)}
           onBlur={(e) => validateField('stellar_radius_rs', e.target.value)}
         />
-        <FormInput 
-          label="snr" 
-          field="snr" 
+        <FormInput
+          label="snr"
+          field="snr"
           value={features.snr}
           error={errors.snr || ''}
           onChange={(e) => update('snr', e.target.value)}

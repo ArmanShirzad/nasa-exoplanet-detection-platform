@@ -1,18 +1,15 @@
 'use client';
 
-import React, { useRef, useState, useMemo, Suspense } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import React, { useRef, useState, Suspense } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
 import {
   OrbitControls,
   Stars,
   Text,
-  Sphere,
-  Html,
-  useTexture,
-  Environment
+  Sphere
 } from '@react-three/drei';
 import { motion } from 'framer-motion';
-import { X, Info, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+import { X, Info, RotateCcw, ZoomIn } from 'lucide-react';
 import * as THREE from 'three';
 
 import {
@@ -34,7 +31,7 @@ function Exoplanet({ data, onSelect }: { data: ExoplanetData; onSelect: (planet:
   const color = getCategoryColor(data.category);
   const scale = Math.max(0.1, Math.min(2, data.radius / 2)); // Scale based on radius
 
-  useFrame((state) => {
+  useFrame(() => {
     if (meshRef.current) {
       meshRef.current.rotation.y += 0.01;
       meshRef.current.scale.setScalar(hovered ? scale * 1.2 : scale);
@@ -88,7 +85,7 @@ function Exoplanet({ data, onSelect }: { data: ExoplanetData; onSelect: (planet:
 function EarthReference() {
   const meshRef = useRef<THREE.Mesh>(null);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (meshRef.current) {
       meshRef.current.rotation.y += 0.005;
     }
@@ -115,20 +112,6 @@ function EarthReference() {
       </Text>
     </group>
   );
-}
-
-// Camera controller
-function CameraController() {
-  const { camera } = useThree();
-
-  useFrame(() => {
-    // Auto-rotate camera slowly
-    camera.position.x = Math.sin(Date.now() * 0.0001) * 20;
-    camera.position.z = Math.cos(Date.now() * 0.0001) * 20;
-    camera.lookAt(0, 0, 0);
-  });
-
-  return null;
 }
 
 // Main 3D viewer component
