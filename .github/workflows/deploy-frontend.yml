@@ -38,8 +38,8 @@ jobs:
       - name: Build Next.js static export
         working-directory: ./frontend
         env:
-          # Use the production backend URL for the build
-          NEXT_PUBLIC_BACKEND_URL: "http://164.92.162.181:8000"
+          # Use the production backend URL via Nginx Gateway
+          NEXT_PUBLIC_BACKEND_URL: "https://nasaexoplanet2025.armanshirzad.com"
         run: npm run build
 
       - name: Setup Pages
