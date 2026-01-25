@@ -66,7 +66,7 @@ Your new Docker setup is **perfectly aligned** with the `arman-infra` gateway:
 5. **Update Frontend Environment Variable**:
    In `.github/workflows/deploy-frontend.yml`, the backend URL is set to:
    ```yaml
-   NEXT_PUBLIC_BACKEND_URL: "https://nasaexoplanet2025.armanshirzad.com"
+   NEXT_PUBLIC_BACKEND_URL: "https://api.nasaexoplanet2025.armanshirzad.com"
    ```
 
 ---
@@ -92,7 +92,7 @@ curl http://your-droplet-ip:8000/healthz
 ## 🎯 Next Steps
 
 1. **Push this commit** - Backend will auto-deploy via Docker
-2. **Configure DNS** - Point `nasaexoplanet2025.armanshirzad.com` to your droplet IP (already done)
-3. **Add the Nginx config** - Copy `nasa.conf.example` to `arman-infra/sites/nasa.conf`
+2. **Configure DNS** - Point `api.nasaexoplanet2025.armanshirzad.com` to your droplet IP
+3. **Add the Nginx config** - Copy `nasa.conf` to `arman-infra/sites/nasa.conf`
 4. **Add SSL** - Run certbot in `arman-infra` for HTTPS
-5. **Frontend will auto-update** - Already pointing to `https://nasaexoplanet2025.armanshirzad.com`
+5. **Frontend will auto-update** - Already pointing to `https://api.nasaexoplanet2025.armanshirzad.com`

@@ -39,7 +39,7 @@ jobs:
         working-directory: ./frontend
         env:
           # Use the production backend URL via Nginx Gateway
-          NEXT_PUBLIC_BACKEND_URL: "https://nasaexoplanet2025.armanshirzad.com"
+          NEXT_PUBLIC_BACKEND_URL: "https://api.nasaexoplanet2025.armanshirzad.com"
         run: npm run build
 
       - name: Setup Pages
