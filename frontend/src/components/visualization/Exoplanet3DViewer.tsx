@@ -5,8 +5,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import {
   OrbitControls,
   Stars,
-  Text,
-  Sphere
+  Text
 } from '@react-three/drei';
 import { motion } from 'framer-motion';
 import { X, Info, RotateCcw, ZoomIn } from 'lucide-react';

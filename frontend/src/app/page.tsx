@@ -45,7 +45,6 @@ interface Message {
   isTyping?: boolean;
 }
 
-type InputMode = 'manual';
 type AppState = 'landing' | 'analyzing' | 'results';
 
 export default function Home() {
@@ -148,64 +147,7 @@ export default function Home() {
     }
   };
 
-  const startAnalysis = async (data: unknown) => {
-    setIsAnalyzing(true);
-    setAppState('analyzing');
 
-    // Add user message
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: 'I submitted manual data for analysis',
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-
-    try {
-      // Call the API
-      const response = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error('Analysis failed');
-      }
-
-      const result: AnalysisResult = await response.json();
-      setAnalysisResult(result);
-      setAppState('results');
-      setIsAnalyzing(false);
-
-      // Add AI response
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'ai',
-        content: `Analysis complete! ${result.verdict} with ${result.confidence}% confidence. ${result.explanation}`,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
-    } catch (error) {
-      console.error('Analysis error:', error);
-      setIsAnalyzing(false);
-      setAppState('landing');
-
-      // Add error message
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'ai',
-        content: 'Sorry, there was an error analyzing your data. Please try again.',
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, errorMessage]);
-    }
-  };
 
   const handleChatMessage = useCallback(async (message: string) => {
     // Check if limit reached
