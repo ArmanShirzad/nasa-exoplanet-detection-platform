@@ -111,40 +111,31 @@ jobs:
     if: github.ref == 'refs/heads/main'
     
     steps:
-    - name: Deploy to DigitalOcean Droplet
+    - name: Deploy to DigitalOcean Droplet via Docker
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.DO_HOST }}
         username: ${{ secrets.DO_USERNAME }}
         key: ${{ secrets.DO_SSH_KEY }}
         script: |
-          # Navigate to project directory (adjust if your path is different)
+          # Navigate to project directory
           cd ~/nasa-backend
           
           # Pull latest changes
           git pull origin main
           
-          # Go to backend folder
-          cd backend
+          # Ensure the arman_net network exists (created by arman-infra)
+          docker network inspect arman_net >/dev/null 2>&1 || docker network create arman_net
           
-          # Configure Python environment
-          if [ ! -d "venv" ]; then
-            python3 -m venv venv
-          fi
-          source venv/bin/activate
+          # Build and restart the Docker container
+          docker-compose down
+          docker-compose up -d --build
           
-          # Install dependencies
-          pip install -r requirements.txt
+          # Show status
+          docker-compose ps
+          docker logs --tail 50 nasa-backend
           
-          # Restart the application
-          # Killing existing uvicorn process (simple reload strategy)
-          pkill -f "uvicorn src.app.main:app" || true
-          
-          # Start server in background using the existing script or direct command
-          # Using nohup to keep it running after SSH disconnects
-          nohup ./start_server.sh > app.log 2>&1 &
-          
-          echo "🚀 Deployment triggered successfully"
+          echo "🚀 Docker deployment complete!"
 
   notify:
     runs-on: ubuntu-latest

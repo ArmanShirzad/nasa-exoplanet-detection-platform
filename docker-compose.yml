@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  backend:
+    container_name: nasa-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - PORT=8000
+    # In production with the Nginx Gateway:
+    # 1. Provide the gateway network (arman_net) to this container.
+    # 2. No need to expose ports 8000:8000 to the host if Nginx proxies via the internal network.
+    #    However, keeping it exposed allows for direct IP access testing if needed.
+    ports:
+      - "8000:8000"
+    networks:
+      - arman_net
+
+networks:
+  # The shared network managed by your arman-infra gateway setup
+  # Run `docker network create arman_net` on the server if it doesn't exist
+  arman_net:
+    external: true

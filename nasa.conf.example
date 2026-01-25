@@ -1,0 +1,43 @@
+# NASA Exoplanet Backend Configuration
+# Place this file in arman-infra/sites/nasa.conf
+
+server {
+    listen 80;
+    server_name api.nasaexoplanet.armanshirzad.com;  # Change this to your actual subdomain
+    
+    # Optional: Redirect to HTTPS (enable after SSL setup)
+    # return 301 https://$server_name$request_uri;
+
+    location / {
+        # Proxy to the Docker container via the internal network
+        proxy_pass http://nasa-backend:8000;
+        
+        # Standard proxy headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}
+
+# Uncomment this block after you set up SSL with certbot
+# server {
+#     listen 443 ssl http2;
+#     server_name api.nasaexoplanet.armanshirzad.com;
+# 
+#     ssl_certificate /etc/letsencrypt/live/api.nasaexoplanet.armanshirzad.com/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/api.nasaexoplanet.armanshirzad.com/privkey.pem;
+# 
+#     location / {
+#         proxy_pass http://nasa-backend:8000;
+#         proxy_set_header Host $host;
+#         proxy_set_header X-Real-IP $remote_addr;
+#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#         proxy_set_header X-Forwarded-Proto $scheme;
+#     }
+# }
