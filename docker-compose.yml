@@ -13,8 +13,8 @@ services:
     # 1. Provide the gateway network (arman_net) to this container.
     # 2. No need to expose ports 8000:8000 to the host if Nginx proxies via the internal network.
     #    However, keeping it exposed allows for direct IP access testing if needed.
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     networks:
       - arman_net
 
