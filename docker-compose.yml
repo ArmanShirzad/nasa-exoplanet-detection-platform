@@ -3,9 +3,7 @@ version: '3.8'
 services:
   backend:
     container_name: nasa-backend
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/armanshirzad/nasa-backend:main
     restart: always
     environment:
       - PORT=8000
