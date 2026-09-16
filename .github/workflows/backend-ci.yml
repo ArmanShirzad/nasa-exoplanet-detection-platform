@@ -116,9 +116,9 @@ jobs:
     steps:
     - name: Notify Status
       run: |
-        if [ "${{ needs.deploy.result }}" == "success" ]; then
+        if [ "${{ needs.build.result }}" == "success" ]; then
           echo "✅ Deployment Successful!"
         else
-          echo "⚠️ Deployment status: ${{ needs.deploy.result }}"
+          echo "⚠️ Build status: ${{ needs.build.result }}"
         fi
 
