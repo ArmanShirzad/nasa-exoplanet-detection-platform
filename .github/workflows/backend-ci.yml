@@ -108,41 +108,9 @@ jobs:
         python -c "import yaml; yaml.safe_load(open('openapi.yaml'))"
         echo "OpenAPI specification is valid YAML"
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [test, build]
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-    - name: Deploy to DigitalOcean Droplet via Docker
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.DO_HOST }}
-        username: ${{ secrets.DO_USERNAME }}
-        key: ${{ secrets.DO_SSH_KEY }}
-        script: |
-          # Navigate to project directory
-          cd ~/nasa-backend
-          
-          # Pull latest changes
-          git pull origin main
-          
-          # Ensure the arman_net network exists (created by arman-infra)
-          docker network inspect arman_net >/dev/null 2>&1 || docker network create arman_net
-          
-          # Build and restart the Docker container
-          docker-compose down
-          docker-compose up -d --build
-          
-          # Show status
-          docker-compose ps
-          docker logs --tail 50 nasa-backend
-          
-          echo "🚀 Docker deployment complete!"
-
   notify:
     runs-on: ubuntu-latest
-    needs: [test, build, deploy]
+    needs: [test, build]
     if: always()
 
     steps:
